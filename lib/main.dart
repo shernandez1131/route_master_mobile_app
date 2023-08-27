@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'sign_in_view.dart';
+import 'dart:io';
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -18,5 +19,15 @@ class MyApp extends StatelessWidget {
 }
 
 void main() {
+  HttpOverrides.global = MyHttpOverrides();
   runApp(MyApp());
+}
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
 }
