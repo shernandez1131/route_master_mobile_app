@@ -12,7 +12,7 @@ class LoginService {
   Future<Map<String, dynamic>> authenticate(User user) async {
     final url = Uri.parse('$baseUrl/api/users/authenticate');
     final headers = {
-      'Content-Type': 'application/json', // Set the correct content type
+      'Content-Type': 'application/json',
     };
     final response = await http.post(
       url,
@@ -31,14 +31,16 @@ class LoginService {
   Future<void> register(User user) async {
     final url = Uri.parse('$baseUrl/api/users');
     final headers = {
-      'Content-Type': 'application/json', // Set the correct content type
+      'Content-Type': 'application/json',
     };
-    final response = await http.post(url, headers: headers, body: {
-      'email': user.email,
-      'username': user.username,
-      'password': user.password,
-      'isActive': true, // Always set to true
-    });
+    final response = await http.post(url,
+        headers: headers,
+        body: jsonEncode({
+          'email': user.email,
+          'username': user.username,
+          'password': user.password,
+          'isActive': true, // Always set to true
+        }));
 
     if (response.statusCode != 200) {
       throw Exception('Registration failed');
