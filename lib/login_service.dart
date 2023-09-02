@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:route_master_mobile_app/passenger_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'user_model.dart';
@@ -28,7 +29,7 @@ class LoginService {
     }
   }
 
-  Future<void> register(User user) async {
+  Future<int> register(User user) async {
     final url = Uri.parse('$baseUrl/api/users');
     final headers = {
       'Content-Type': 'application/json',
@@ -39,7 +40,33 @@ class LoginService {
           'email': user.email,
           'username': user.username,
           'password': user.password,
-          'isActive': true, // Always set to true
+          'isActive': true,
+        }));
+
+    if (response.statusCode == 200) {
+      final responseBody = jsonDecode(response.body);
+      final userId = responseBody['userId'] as int;
+      return userId; // Return the userId
+    } else {
+      throw Exception('Registration failed');
+    }
+  }
+
+  Future<void> completeRegister(Passenger passenger) async {
+    final url = Uri.parse('$baseUrl/api/passengers');
+    final headers = {
+      'Content-Type': 'application/json',
+    };
+    final response = await http.post(url,
+        headers: headers,
+        body: jsonEncode({
+          'userId': passenger.userId,
+          'firstName': passenger.firstName,
+          'lastName': passenger.lastName,
+          'lastName2': passenger.lastName2,
+          'isActive': passenger.isActive,
+          'phoneNumber': passenger.phoneNumber,
+          'paymentMethodId': passenger.paymentMethodId // Always set to true
         }));
 
     if (response.statusCode != 200) {

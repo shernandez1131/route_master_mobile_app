@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'complete_register.dart';
 import 'login_service.dart';
 import 'sign_in_view.dart';
 import 'user_model.dart';
@@ -7,19 +8,25 @@ class RegisterView extends StatelessWidget {
   final LoginService loginService = LoginService(
       'https://10.0.2.2:7243'); // Replace with your actual base URL
 
-  Future<void> _register(User user) async {
-    try {
-      await loginService.register(user);
-
-      // Successfully registered, you can navigate to the sign-in page or perform other actions
-    } catch (e) {
-      // Handle registration error
-      print('Registration failed: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    Future<void> register(User user) async {
+      try {
+        int registeredUserId = await loginService.register(user);
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                CompleteRegisterView(userId: registeredUserId),
+          ),
+        );
+      } catch (e) {
+        // Handle registration error
+        print('Registration failed: $e');
+      }
+    }
+
     TextEditingController usernameController = TextEditingController();
     TextEditingController emailController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
@@ -66,21 +73,21 @@ class RegisterView extends StatelessWidget {
                   password: password,
                   username: username,
                 );
-                _register(user);
+                register(user);
               },
               child: Text('Registrarse'),
             ),
-            // SizedBox(height: 10),
-            // Text('¿O si ya está registrado?'),
-            // ElevatedButton(
-            //   onPressed: () {
-            //     Navigator.push(
-            //       context,
-            //       MaterialPageRoute(builder: (context) => SignInView()),
-            //     );
-            //   },
-            //   child: Text('Iniciar Sesión'),
-            // ),
+            SizedBox(height: 10),
+            Text('¿O si ya está registrado?'),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => SignInView()),
+                );
+              },
+              child: Text('Iniciar Sesión'),
+            ),
           ],
         ),
       ),
