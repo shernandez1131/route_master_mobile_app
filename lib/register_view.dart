@@ -70,17 +70,17 @@ class RegisterView extends StatelessWidget {
               },
               child: Text('Registrarse'),
             ),
-            SizedBox(height: 10),
-            Text('¿O si ya está registrado?'),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => SignInView()),
-                );
-              },
-              child: Text('Iniciar Sesión'),
-            ),
+            // SizedBox(height: 10),
+            // Text('¿O si ya está registrado?'),
+            // ElevatedButton(
+            //   onPressed: () {
+            //     Navigator.push(
+            //       context,
+            //       MaterialPageRoute(builder: (context) => SignInView()),
+            //     );
+            //   },
+            //   child: Text('Iniciar Sesión'),
+            // ),
           ],
         ),
       ),
