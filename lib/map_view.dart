@@ -8,6 +8,7 @@ class MapView extends StatefulWidget {
 
 class _MapViewState extends State<MapView> {
   late GoogleMapController mapController;
+  TextEditingController _locationController = TextEditingController();
 
   final CameraPosition _initialCameraPosition = CameraPosition(
     target: LatLng(-12.0461513, -77.0306332),
@@ -21,12 +22,10 @@ class _MapViewState extends State<MapView> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: EdgeInsets.all(8),
               child: TextField(
-                decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.person),
-                  hintText: 'Where to?',
-                ),
+                controller: _locationController,
+                decoration: InputDecoration(hintText: 'Search location'),
               ),
             ),
             Expanded(
