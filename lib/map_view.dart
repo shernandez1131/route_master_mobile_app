@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import 'profile_view.dart';
+
 class MapView extends StatefulWidget {
   @override
   _MapViewState createState() => _MapViewState();
@@ -18,26 +20,58 @@ class _MapViewState extends State<MapView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.all(8),
-              child: TextField(
-                controller: _locationController,
-                decoration: InputDecoration(hintText: 'Search location'),
+      body: Stack(
+        children: [
+          GoogleMap(
+            initialCameraPosition: _initialCameraPosition,
+            onMapCreated: (GoogleMapController controller) {
+              mapController = controller;
+            },
+          ),
+          SafeArea(
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.transparent, // Transparent background
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
+                ),
+              ),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      // Handle profile icon click, navigate to profile_view
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => ProfileView()),
+                      );
+                    },
+                    child: CircleAvatar(
+                      radius: 20, // Adjust the size as needed
+                      backgroundImage: AssetImage('images/profile_icon.png'),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _locationController,
+                      decoration: InputDecoration(
+                        hintText: '¿A dónde te diriges?',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(32),
+                        ),
+                        filled: true, // Fill the background
+                        fillColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            Expanded(
-              child: GoogleMap(
-                initialCameraPosition: _initialCameraPosition,
-                onMapCreated: (GoogleMapController controller) {
-                  mapController = controller;
-                },
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: [
