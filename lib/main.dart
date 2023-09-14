@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:route_master_mobile_app/map_view.dart';
 import 'sign_in_view.dart';
 import 'dart:io';
 
@@ -14,14 +13,14 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: SignInView(),
+      home: const SignInView(),
     );
   }
 }
 
 void main() {
   HttpOverrides.global = MyHttpOverrides();
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyHttpOverrides extends HttpOverrides {

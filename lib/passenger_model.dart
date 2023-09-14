@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 class Passenger {
   final int userId;
   final String firstName;

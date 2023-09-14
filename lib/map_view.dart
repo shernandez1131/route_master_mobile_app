@@ -4,15 +4,17 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'profile_view.dart';
 
 class MapView extends StatefulWidget {
+  const MapView({super.key});
+
   @override
-  _MapViewState createState() => _MapViewState();
+  State<MapView> createState() => _MapViewState();
 }
 
 class _MapViewState extends State<MapView> {
   late GoogleMapController mapController;
-  TextEditingController _locationController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
 
-  final CameraPosition _initialCameraPosition = CameraPosition(
+  final CameraPosition _initialCameraPosition = const CameraPosition(
     target: LatLng(-12.0461513, -77.0306332),
     zoom: 11,
   );
@@ -30,8 +32,8 @@ class _MapViewState extends State<MapView> {
           ),
           SafeArea(
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(
                 color: Colors.transparent, // Transparent background
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(24),
@@ -45,15 +47,16 @@ class _MapViewState extends State<MapView> {
                       // Handle profile icon click, navigate to profile_view
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => ProfileView()),
+                        MaterialPageRoute(
+                            builder: (context) => const ProfileView()),
                       );
                     },
-                    child: CircleAvatar(
+                    child: const CircleAvatar(
                       radius: 20, // Adjust the size as needed
                       backgroundImage: AssetImage('images/profile_icon.png'),
                     ),
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: TextField(
                       controller: _locationController,
@@ -74,7 +77,7 @@ class _MapViewState extends State<MapView> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: [
+        items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.directions),
             label: 'Directions',
