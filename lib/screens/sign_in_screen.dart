@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:route_master_mobile_app/map_view.dart';
-import 'login_service.dart';
-import 'register_view.dart';
-import 'user_model.dart';
+import 'package:route_master_mobile_app/screens/map_screen.dart';
+import '../services/login_service.dart';
+import 'register_screen.dart';
+import '../models/user_model.dart';
 
-class SignInView extends StatefulWidget {
-  const SignInView({super.key});
+class SignInScreen extends StatefulWidget {
+  const SignInScreen({super.key});
 
   @override
-  State<SignInView> createState() => _SignInViewState();
+  State<SignInScreen> createState() => _SignInScreenState();
 }
 
-class _SignInViewState extends State<SignInView> {
+class _SignInScreenState extends State<SignInScreen> {
   final LoginService loginService = LoginService('https://10.0.2.2:7243');
   // Replace with your actual base URL
 
@@ -31,7 +31,7 @@ class _SignInViewState extends State<SignInView> {
       if (context.mounted) {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const MapView()),
+          MaterialPageRoute(builder: (context) => MapScreen()),
         );
       }
     } catch (e) {
@@ -82,7 +82,7 @@ class _SignInViewState extends State<SignInView> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const RegisterView()),
+                          builder: (context) => const RegisterScreen()),
                     );
                   },
                   child: const Text('Registrarse'),

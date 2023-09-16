@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'sign_in_view.dart';
+import 'screens/sign_in_screen.dart';
 import 'dart:io';
 
 class MyApp extends StatelessWidget {
@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const SignInView(),
+      home: const SignInScreen(),
     );
   }
 }

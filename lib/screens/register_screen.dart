@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'complete_register.dart';
-import 'login_service.dart';
-import 'sign_in_view.dart';
-import 'user_model.dart';
+import '../services/login_service.dart';
+import 'sign_in_screen.dart';
+import '../models/user_model.dart';
 
-class RegisterView extends StatefulWidget {
-  const RegisterView({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<RegisterView> createState() => _RegisterViewState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterViewState extends State<RegisterView> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final LoginService loginService = LoginService('https://10.0.2.2:7243');
 
   TextEditingController usernameController = TextEditingController();
@@ -80,7 +80,7 @@ class _RegisterViewState extends State<RegisterView> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const SignInView()),
+                          builder: (context) => const SignInScreen()),
                     );
                   },
                   child: const Text('Iniciar Sesión'),

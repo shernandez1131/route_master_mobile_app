@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:route_master_mobile_app/passenger_model.dart';
+import 'package:route_master_mobile_app/models/passenger_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'user_model.dart';
+import '../models/user_model.dart';
 
 class LoginService {
   final String baseUrl;

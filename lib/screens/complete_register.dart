@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'login_service.dart';
-import 'map_view.dart';
-import 'passenger_model.dart';
+import '../services/login_service.dart';
+import 'map_screen.dart';
+import '../models/passenger_model.dart';
 
 class CompleteRegisterView extends StatefulWidget {
   final int userId;
@@ -114,7 +114,7 @@ class _CompleteRegisterViewState extends State<CompleteRegisterView> {
       if (context.mounted) {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const MapView()),
+          MaterialPageRoute(builder: (context) => MapScreen()),
         );
       }
     } catch (e) {
