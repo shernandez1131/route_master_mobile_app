@@ -26,7 +26,9 @@ class _SignInScreenState extends State<SignInScreen> {
       final response = await loginService.authenticate(user);
       final token = response['token']
           as String; // Assuming 'token' is the key for the bearer token in the response
-      await loginService.saveToken(token);
+      final userId = response['userId'] as int;
+      await LoginService.saveToken(token);
+      await LoginService.saveUserId(userId);
 
       if (context.mounted) {
         Navigator.push(
