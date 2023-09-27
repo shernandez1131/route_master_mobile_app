@@ -44,10 +44,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 TextField(
                   controller: passwordController,
+                  obscureText: true,
                   decoration: const InputDecoration(labelText: 'Contraseña'),
                 ),
                 TextField(
                   controller: repeatPasswordController,
+                  obscureText: true,
                   decoration:
                       const InputDecoration(labelText: 'Repetir Contraseña'),
                 ),

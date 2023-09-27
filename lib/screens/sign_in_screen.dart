@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:route_master_mobile_app/screens/map_screen.dart';
 import '../services/login_service.dart';
-import 'register_screen.dart';
 import '../models/user_model.dart';
+import 'screens.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -60,10 +59,27 @@ class _SignInScreenState extends State<SignInScreen> {
                   controller: emailController,
                   decoration: const InputDecoration(labelText: 'Correo'),
                 ),
+                const SizedBox(height: 10),
                 TextField(
                   controller: passwordController,
+                  obscureText: true,
                   decoration: const InputDecoration(labelText: 'Contraseña'),
                 ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => PasswordResetScreen()));
+                      },
+                      child: const Text('¿Olvidaste tu contraseña?'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: () async {
                     final email = emailController.text;
@@ -78,7 +94,8 @@ class _SignInScreenState extends State<SignInScreen> {
                   child: const Text('Iniciar Sesión'),
                 ),
                 const SizedBox(height: 10),
-                const Text('¿O si no está registrado?'),
+                const Center(child: Text('O si no está registrado')),
+                const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.push(
