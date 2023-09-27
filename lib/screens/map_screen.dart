@@ -77,6 +77,7 @@ class _MapScreenState extends PlacesAutocompleteState {
                 ),
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Column(
                     children: [
@@ -247,25 +248,40 @@ class _MapScreenState extends PlacesAutocompleteState {
     // Update the markers set
     setState(() {
       if (type == 'start') {
-        markers.remove(MarkerId('startMarker')); // Remove previous start marker
+        markers.removeWhere((element) =>
+            element.markerId.value ==
+            'startMarker'); // Remove previous start marker
       } else {
-        markers
-            .remove(MarkerId('finishMarker')); // Remove previous finish marker
+        markers.removeWhere((element) =>
+            element.markerId.value ==
+            'finishMarker'); // Remove previous finish marker
       }
       markers.add(marker); // Add the new marker
 
       // Adjust the camera position to show both markers if there are two markers
       if (markers.length == 2) {
+        double minLat = markers.elementAt(0).position.latitude;
+        double maxLat = markers.elementAt(1).position.latitude;
+        double minLng = markers.elementAt(0).position.longitude;
+        double maxLng = markers.elementAt(1).position.longitude;
+
+        if (minLat > maxLat) {
+          double temp = minLat;
+          minLat = maxLat;
+          maxLat = temp;
+        }
+
+        if (minLng > maxLng) {
+          double temp = minLng;
+          minLng = maxLng;
+          maxLng = temp;
+        }
+
         LatLngBounds bounds = LatLngBounds(
-          southwest: LatLng(
-            markers.elementAt(0).position.latitude,
-            markers.elementAt(0).position.longitude,
-          ),
-          northeast: LatLng(
-            markers.elementAt(1).position.latitude,
-            markers.elementAt(1).position.longitude,
-          ),
+          southwest: LatLng(minLat, minLng),
+          northeast: LatLng(maxLat, maxLng),
         );
+
         mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 100));
       } else {
         // If there's only one marker, zoom in on that marker
