@@ -24,6 +24,7 @@ class MapScreen extends PlacesAutocompleteWidget {
 
 class _MapScreenState extends PlacesAutocompleteState {
   late GoogleMapController mapController;
+  Set<Marker> markers = {};
 
   final CameraPosition _initialCameraPosition = const CameraPosition(
     target: LatLng(-12.0461513, -77.0306332),
@@ -31,11 +32,20 @@ class _MapScreenState extends PlacesAutocompleteState {
   );
 
   final FocusNode searchBoxFocusNode = FocusNode();
+  final FocusNode searchBoxStartingPointFocusNode = FocusNode();
+  List<Prediction> predictions = []; // List to store predictions
 
   @override
   void initState() {
     searchBoxFocusNode.addListener(() {
       if (searchBoxFocusNode.hasFocus) {
+        setState(() {});
+      } else {
+        setState(() {});
+      }
+    });
+    searchBoxStartingPointFocusNode.addListener(() {
+      if (searchBoxStartingPointFocusNode.hasFocus) {
         setState(() {});
       } else {
         setState(() {});
@@ -54,6 +64,7 @@ class _MapScreenState extends PlacesAutocompleteState {
             onMapCreated: (GoogleMapController controller) {
               mapController = controller;
             },
+            markers: markers,
           ),
           SafeArea(
             child: Container(
@@ -67,57 +78,110 @@ class _MapScreenState extends PlacesAutocompleteState {
               ),
               child: Column(
                 children: [
-                  Row(
+                  Column(
                     children: [
-                      !searchBoxFocusNode.hasFocus
-                          ? GestureDetector(
-                              onTap: () {
-                                // Handle profile icon click, navigate to profile_view
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          const ProfileScreen()),
-                                );
-                              },
-                              child: const CircleAvatar(
-                                radius: 20, // Adjust the size as needed
-                                backgroundImage:
-                                    AssetImage('images/profile_icon.png'),
-                              ),
-                            )
-                          : const SizedBox.shrink(),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Focus(
-                          focusNode: searchBoxFocusNode,
-                          child: AppBarPlacesAutoCompleteTextField(
-                            textDecoration: InputDecoration(
-                              hintText: '¿A dónde te diriges?',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(32),
-                              ),
-                              filled: true, // Fill the background
-                              fillColor: Colors.white,
-                            ),
-                            textStyle: null,
-                            cursorColor: null,
-                          ),
-                        ),
+                      Row(
+                        children: [
+                          (!searchBoxFocusNode.hasFocus &&
+                                  !searchBoxStartingPointFocusNode.hasFocus)
+                              ? GestureDetector(
+                                  onTap: () {
+                                    // Handle profile icon click, navigate to profile_view
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const ProfileScreen()),
+                                    );
+                                  },
+                                  child: const CircleAvatar(
+                                    radius: 20, // Adjust the size as needed
+                                    backgroundImage:
+                                        AssetImage('images/profile_icon.png'),
+                                  ),
+                                )
+                              : const SizedBox.shrink(),
+                          (!searchBoxFocusNode.hasFocus &&
+                                  !searchBoxStartingPointFocusNode.hasFocus)
+                              ? const SizedBox(width: 12)
+                              : const SizedBox(width: 0),
+                          !searchBoxFocusNode.hasFocus
+                              ? Expanded(
+                                  child: Focus(
+                                    focusNode: searchBoxStartingPointFocusNode,
+                                    child: AppBarPlacesAutoCompleteTextField(
+                                        textDecoration: InputDecoration(
+                                          hintText:
+                                              '¿Cuál es tu punto de partida?',
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(32),
+                                          ),
+                                          filled: true, // Fill the background
+                                          fillColor: Colors.white,
+                                        ),
+                                        textStyle: null,
+                                        cursorColor: null),
+                                  ),
+                                )
+                              : const SizedBox.shrink(),
+                        ],
                       ),
+                      (!searchBoxStartingPointFocusNode.hasFocus)
+                          ? Focus(
+                              focusNode: searchBoxFocusNode,
+                              child: AppBarPlacesAutoCompleteTextFieldAlt(
+                                  textDecoration: InputDecoration(
+                                    hintText: '¿Cuál es tu punto de llegada?',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(32),
+                                    ),
+                                    filled: true, // Fill the background
+                                    fillColor: Colors.white,
+                                  ),
+                                  textStyle: null,
+                                  cursorColor: null))
+                          : const SizedBox.shrink(),
                     ],
                   ),
-                  Expanded(
-                    child: PlacesAutocompleteResult(
-                      onTap: (p) =>
-                          displayPrediction(p, ScaffoldMessenger.of(context)),
-                      logo: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [FlutterLogo()],
-                      ),
-                      resultTextStyle: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
+                  (searchBoxStartingPointFocusNode.hasFocus)
+                      ? Expanded(
+                          child: Container(
+                            color: Colors.white.withOpacity(0.7),
+                            height: 100, // White background
+                            child: PlacesAutocompleteResult(
+                              onTap: (prediction) {
+                                displayPrediction(prediction, 'start');
+                              },
+                              logo: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [FlutterLogo()],
+                              ),
+                              resultTextStyle:
+                                  Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                        )
+                      : const SizedBox(width: 1),
+                  (searchBoxFocusNode.hasFocus)
+                      ? Expanded(
+                          child: Container(
+                            color: Colors.white.withOpacity(0.7),
+                            height: 100, // White background
+                            child: PlacesAutocompleteResultAlt(
+                              onTap: (prediction) {
+                                displayPrediction(prediction, 'finish');
+                              },
+                              logo: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [FlutterLogo()],
+                              ),
+                              resultTextStyle:
+                                  Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                        )
+                      : const SizedBox(width: 1),
                 ],
               ),
             ),
@@ -143,47 +207,75 @@ class _MapScreenState extends PlacesAutocompleteState {
     );
   }
 
-  @override
-  void onResponseError(PlacesAutocompleteResponse response) {
-    super.onResponseError(response);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(response.errorMessage ?? 'Unknown error')),
-    );
-  }
-
-  @override
-  void onResponse(PlacesAutocompleteResponse response) {
-    super.onResponse(response);
-
-    if (response.predictions.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Got answer')),
-      );
+  Future<void> displayPrediction(Prediction? p, String type) async {
+    if (p == null) {
+      return;
     }
+
+    updateTextField(p, type);
+    // Get detail (lat/lng)
+    final _places = GoogleMapsPlaces(
+      apiKey: kGoogleApiKey,
+      apiHeaders: await const GoogleApiHeaders().getHeaders(),
+    );
+
+    final detail = await _places.getDetailsByPlaceId(p.placeId!);
+    final geometry = detail.result.geometry!;
+    final lat = geometry.location.lat;
+    final lng = geometry.location.lng;
+
+    // Create a LatLng object from the coordinates
+    final targetLocation = LatLng(lat, lng);
+
+    // Create a Marker object
+    final MarkerId markerId =
+        type == 'start' ? MarkerId('startMarker') : MarkerId('finishMarker');
+    final BitmapDescriptor markerIcon = type == 'start'
+        ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)
+        : BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet);
+
+    final marker = Marker(
+      markerId: markerId,
+      position: targetLocation,
+      infoWindow: InfoWindow(
+        title: p.description ?? '',
+        snippet: '$lat/$lng',
+      ),
+      icon: markerIcon,
+    );
+
+    // Update the markers set
+    setState(() {
+      if (type == 'start') {
+        markers.remove(MarkerId('startMarker')); // Remove previous start marker
+      } else {
+        markers
+            .remove(MarkerId('finishMarker')); // Remove previous finish marker
+      }
+      markers.add(marker); // Add the new marker
+
+      // Adjust the camera position to show both markers if there are two markers
+      if (markers.length == 2) {
+        LatLngBounds bounds = LatLngBounds(
+          southwest: LatLng(
+            markers.elementAt(0).position.latitude,
+            markers.elementAt(0).position.longitude,
+          ),
+          northeast: LatLng(
+            markers.elementAt(1).position.latitude,
+            markers.elementAt(1).position.longitude,
+          ),
+        );
+        mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 100));
+      } else {
+        // If there's only one marker, zoom in on that marker
+        mapController
+            .animateCamera(CameraUpdate.newLatLngZoom(targetLocation, 15.0));
+      }
+
+      // Unfocus text fields
+      searchBoxFocusNode.unfocus();
+      searchBoxStartingPointFocusNode.unfocus();
+    });
   }
-}
-
-Future<void> displayPrediction(
-    Prediction? p, ScaffoldMessengerState messengerState) async {
-  if (p == null) {
-    return;
-  }
-
-  // get detail (lat/lng)
-  final _places = GoogleMapsPlaces(
-    apiKey: kGoogleApiKey,
-    apiHeaders: await const GoogleApiHeaders().getHeaders(),
-  );
-
-  final detail = await _places.getDetailsByPlaceId(p.placeId!);
-  final geometry = detail.result.geometry!;
-  final lat = geometry.location.lat;
-  final lng = geometry.location.lng;
-
-  messengerState.showSnackBar(
-    SnackBar(
-      content: Text('${p.description} - $lat/$lng'),
-    ),
-  );
 }

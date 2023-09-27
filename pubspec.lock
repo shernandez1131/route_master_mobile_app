@@ -121,10 +121,11 @@ packages:
   flutter_google_places_hoc081098:
     dependency: "direct main"
     description:
-      name: flutter_google_places_hoc081098
-      sha256: "68a91a00ad46a84cd8b6cda233cd8a3c0fc08189771e64d135cea5c5e954116c"
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: HEAD
+      resolved-ref: e860efbce54fa8b3297d2dfd0e3f76a8b50a54ff
+      url: "https://github.com/shernandez1131/flutter_google_places_custom.git"
+    source: git
     version: "2.0.0-beta.0"
   flutter_lints:
     dependency: "direct dev"
