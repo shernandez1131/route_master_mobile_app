@@ -3,10 +3,13 @@ import 'package:flutter_google_places_hoc081098/flutter_google_places_hoc081098.
 import 'package:flutter_google_places_hoc081098/google_maps_webservice_places.dart';
 import 'package:google_api_headers/google_api_headers.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:route_master_mobile_app/services/directions_service.dart';
 import 'package:uuid/uuid.dart';
 //import 'package:route_master_mobile_app/widgets/search_widget.dart';
 import '../constants.dart';
 import 'profile_screen.dart';
+
+final DirectionsService directionsService = DirectionsService(kGoogleApiKey);
 
 class MapScreen extends PlacesAutocompleteWidget {
   MapScreen({Key? key})
@@ -25,6 +28,10 @@ class MapScreen extends PlacesAutocompleteWidget {
 class _MapScreenState extends PlacesAutocompleteState {
   late GoogleMapController mapController;
   Set<Marker> markers = {};
+  Set<Polyline> polylines = {};
+  List<dynamic> _allRoutes = [];
+  int _currentRouteIndex = 0;
+  String _currentRouteInfo = "";
 
   final CameraPosition _initialCameraPosition = const CameraPosition(
     target: LatLng(-12.0461513, -77.0306332),
@@ -65,6 +72,7 @@ class _MapScreenState extends PlacesAutocompleteState {
               mapController = controller;
             },
             markers: markers,
+            polylines: polylines,
           ),
           SafeArea(
             child: Container(
@@ -183,6 +191,56 @@ class _MapScreenState extends PlacesAutocompleteState {
                           ),
                         )
                       : const SizedBox(width: 1),
+                  (_allRoutes.isNotEmpty)
+                      ? GestureDetector(
+                          onHorizontalDragEnd: (details) {
+                            // Determine if this was a left or right swipe
+                            if (details.velocity.pixelsPerSecond.dx > 0) {
+                              // Right swipe
+                              if (_currentRouteIndex > 0) {
+                                _currentRouteIndex--;
+                                _displayRoute(_allRoutes[_currentRouteIndex]);
+                              }
+                            } else if (details.velocity.pixelsPerSecond.dx <
+                                0) {
+                              // Left swipe
+                              if (_currentRouteIndex < _allRoutes.length - 1) {
+                                _currentRouteIndex++;
+                                _displayRoute(_allRoutes[_currentRouteIndex]);
+                              }
+                            }
+                          },
+                          child: Positioned(
+                            bottom: 16,
+                            left: 16,
+                            right: 16,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      spreadRadius: 1,
+                                      blurRadius: 5,
+                                    )
+                                  ]),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Icon(Icons.arrow_back_ios,
+                                      color: Colors.blue),
+                                  Text(_currentRouteInfo),
+                                  Icon(Icons.arrow_forward_ios,
+                                      color: Colors.blue),
+                                ],
+                              ),
+                            ),
+                          ))
+                      : const SizedBox(width: 1),
                 ],
               ),
             ),
@@ -206,6 +264,103 @@ class _MapScreenState extends PlacesAutocompleteState {
         ],
       ),
     );
+  }
+
+  Future<void> fetchAndDisplayDirections(
+      LatLng origin, LatLng destination) async {
+    try {
+      final directions = await directionsService.getDirections(
+        origin: origin,
+        destination: destination,
+      );
+
+      if (directions != null && directions['routes'] != null) {
+        List<dynamic> routes = directions['routes'];
+
+        // Sort routes based on travel time
+        routes.sort((a, b) {
+          int timeA = a['legs'][0]['duration']['value'];
+          int timeB = b['legs'][0]['duration']['value'];
+          return timeA.compareTo(timeB);
+        });
+
+        // Store all routes for swipe navigation
+        _allRoutes = routes;
+        _currentRouteIndex = 0; // Start with the quickest route
+
+        // Initially, display the quickest route
+        _displayRoute(routes[0]);
+      }
+    } catch (e) {
+      // Handle errors
+      print(e);
+    }
+  }
+
+  void _displayRoute(dynamic route) {
+    // Clear existing polylines
+    polylines.clear();
+
+    for (var leg in route['legs']) {
+      for (var step in leg['steps']) {
+        // Decode the polyline for this step
+        String stepPoints = step['polyline']['points'];
+        List<LatLng> stepPolylinePoints =
+            _convertToLatLng(_decodePoly(stepPoints));
+
+        Polyline? polyline; // Make it nullable
+
+        // Check travel mode
+        if (step['travel_mode'] == 'WALKING') {
+          polyline = Polyline(
+            polylineId: PolylineId('step${step['start_location']}'),
+            color: Colors.blue,
+            width: 5,
+            points: stepPolylinePoints,
+            patterns: [
+              PatternItem.dash(10),
+              PatternItem.gap(10)
+            ], // Dotted pattern
+          );
+        } else if (step['travel_mode'] == 'TRANSIT') {
+          polyline = Polyline(
+            polylineId: PolylineId('step${step['start_location']}'),
+            color: Colors.blue,
+            width: 5,
+            points: stepPolylinePoints,
+          );
+        }
+
+        if (polyline != null) {
+          // Ensure polyline has a value before adding
+          polylines.add(polyline);
+        }
+      }
+    }
+
+    // Update the route info in the bottom popup/container
+    String? transitLineName =
+        getFirstTransitLineName(route['legs'][0]['steps']);
+    if (transitLineName != null) {
+      setState(() {
+        _currentRouteInfo =
+            "${route['legs'][0]['duration']['text']} via $transitLineName";
+      });
+    } else {
+      setState(() {
+        _currentRouteInfo = "${route['legs'][0]['duration']['text']}";
+      });
+    }
+  }
+
+  String? getFirstTransitLineName(List<dynamic> steps) {
+    for (var step in steps) {
+      if (step['travel_mode'] == 'TRANSIT' &&
+          step.containsKey('transit_details')) {
+        return step['transit_details']['line']['short_name'];
+      }
+    }
+    return null;
   }
 
   Future<void> displayPrediction(Prediction? p, String type) async {
@@ -245,44 +400,54 @@ class _MapScreenState extends PlacesAutocompleteState {
       icon: markerIcon,
     );
 
+    markers
+        .removeWhere((existingMarker) => existingMarker.markerId == markerId);
+
     // Update the markers set
     setState(() {
-      if (type == 'start') {
-        markers.removeWhere((element) =>
-            element.markerId.value ==
-            'startMarker'); // Remove previous start marker
-      } else {
-        markers.removeWhere((element) =>
-            element.markerId.value ==
-            'finishMarker'); // Remove previous finish marker
-      }
       markers.add(marker); // Add the new marker
 
-      // Adjust the camera position to show both markers if there are two markers
       if (markers.length == 2) {
-        double minLat = markers.elementAt(0).position.latitude;
-        double maxLat = markers.elementAt(1).position.latitude;
-        double minLng = markers.elementAt(0).position.longitude;
-        double maxLng = markers.elementAt(1).position.longitude;
-
-        if (minLat > maxLat) {
-          double temp = minLat;
-          minLat = maxLat;
-          maxLat = temp;
-        }
-
-        if (minLng > maxLng) {
-          double temp = minLng;
-          minLng = maxLng;
-          maxLng = temp;
-        }
-
+        // Create LatLngBounds based on all markers
         LatLngBounds bounds = LatLngBounds(
-          southwest: LatLng(minLat, minLng),
-          northeast: LatLng(maxLat, maxLng),
+          southwest: LatLng(
+            markers
+                .map((marker) => marker.position.latitude)
+                .reduce((min, value) => min < value ? min : value),
+            markers
+                .map((marker) => marker.position.longitude)
+                .reduce((min, value) => min < value ? min : value),
+          ),
+          northeast: LatLng(
+            markers
+                .map((marker) => marker.position.latitude)
+                .reduce((max, value) => max > value ? max : value),
+            markers
+                .map((marker) => marker.position.longitude)
+                .reduce((max, value) => max > value ? max : value),
+          ),
         );
 
-        mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 100));
+        // Adjust the camera position to show all markers
+        mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 110));
+
+        LatLng? originCoords;
+        LatLng? destinationCoords;
+
+        // Find the origin and destination coordinates from the markers
+        markers.forEach((marker) {
+          if (marker.markerId.value == 'startMarker') {
+            originCoords = marker.position;
+          } else if (marker.markerId.value == 'finishMarker') {
+            destinationCoords = marker.position;
+          }
+        });
+
+        // Check if both origin and destination coordinates are available
+        if (originCoords != null && destinationCoords != null) {
+          // Call the fetchAndDisplayDirections function with the coordinates
+          fetchAndDisplayDirections(originCoords!, destinationCoords!);
+        }
       } else {
         // If there's only one marker, zoom in on that marker
         mapController
@@ -293,5 +458,46 @@ class _MapScreenState extends PlacesAutocompleteState {
       searchBoxFocusNode.unfocus();
       searchBoxStartingPointFocusNode.unfocus();
     });
+  }
+
+  List<LatLng> _convertToLatLng(List points) {
+    List<LatLng> result = <LatLng>[];
+    for (int i = 0; i < points.length; i++) {
+      if (i % 2 != 0) {
+        result.add(LatLng(points[i - 1], points[i]));
+      }
+    }
+    return result;
+  }
+
+  List _decodePoly(String encoded) {
+    List poly = [];
+    int index = 0, len = encoded.length;
+    int lat = 0, lng = 0;
+
+    while (index < len) {
+      int b, shift = 0, result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+
+      poly.add((lat / 1E5));
+      poly.add((lng / 1E5));
+    }
+    return poly;
   }
 }
