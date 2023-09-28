@@ -73,7 +73,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => PasswordResetScreen()));
+                                builder: (context) => ForgotPasswordScreen()));
                       },
                       child: const Text('¿Olvidaste tu contraseña?'),
                     ),
@@ -85,6 +85,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     final email = emailController.text;
                     final password = passwordController.text;
                     final user = User(
+                      userId: 0,
                       email: email,
                       password: password,
                     );

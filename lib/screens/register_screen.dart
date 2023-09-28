@@ -66,6 +66,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     }
 
                     final user = User(
+                      userId: 0,
                       email: email,
                       password: password,
                       username: username,
@@ -109,14 +110,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> register(User user) async {
     try {
       setState(() => isLoading = true);
-      int registeredUserId = await loginService.register(user);
+      user = await loginService.register(user);
 
       if (context.mounted) {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                CompleteRegisterView(userId: registeredUserId),
+            builder: (context) => CompleteRegisterView(
+              user: user,
+              password: passwordController.text,
+            ),
           ),
         );
       }

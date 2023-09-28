@@ -29,7 +29,7 @@ class LoginService {
     }
   }
 
-  Future<int> register(User user) async {
+  Future<User> register(User user) async {
     final url = Uri.parse('$baseUrl/api/users');
     final headers = {
       'Content-Type': 'application/json',
@@ -44,9 +44,7 @@ class LoginService {
         }));
 
     if (response.statusCode == 200) {
-      final responseBody = jsonDecode(response.body);
-      final userId = responseBody['userId'] as int;
-      return userId; // Return the userId
+      return User.fromJson(jsonDecode(response.body)); // Return the user
     } else {
       throw Exception('Registration failed');
     }

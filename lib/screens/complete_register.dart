@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import '../models/models.dart';
 import '../services/login_service.dart';
 import 'map_screen.dart';
-import '../models/passenger_model.dart';
 
 class CompleteRegisterView extends StatefulWidget {
-  final int userId;
+  final User user;
+  final String password;
 
-  const CompleteRegisterView({Key? key, required this.userId})
+  const CompleteRegisterView(
+      {Key? key, required this.user, required this.password})
       : super(key: key);
 
   @override
@@ -75,7 +77,7 @@ class _CompleteRegisterViewState extends State<CompleteRegisterView> {
                 ElevatedButton(
                   onPressed: () async {
                     final passenger = Passenger(
-                      userId: widget.userId,
+                      userId: widget.user.userId,
                       firstName: firstNameController.text,
                       lastName: lastNameController.text,
                       lastName2: lastName2Controller.text,
@@ -111,6 +113,26 @@ class _CompleteRegisterViewState extends State<CompleteRegisterView> {
     try {
       setState(() => isLoading = true);
       await loginService.completeRegister(passenger);
+    } catch (e) {
+      // Handle error
+      debugPrint('Complete registration failed: $e');
+    } finally {
+      setState(() => isLoading = false);
+    }
+
+    try {
+      setState(() => isLoading = true);
+      final User userAuth = User(
+          userId: widget.user.userId,
+          email: widget.user.email,
+          password: widget.password);
+      final response = await loginService.authenticate(userAuth);
+      final token = response['token']
+          as String; // Assuming 'token' is the key for the bearer token in the response
+      final userId = response['userId'] as int;
+      await LoginService.saveToken(token);
+      await LoginService.saveUserId(userId);
+
       if (context.mounted) {
         Navigator.push(
           context,
@@ -118,8 +140,8 @@ class _CompleteRegisterViewState extends State<CompleteRegisterView> {
         );
       }
     } catch (e) {
-      // Handle error
-      debugPrint('Complete registration failed: $e');
+      // Handle authentication error
+      debugPrint('Authentication failed: $e');
     } finally {
       setState(() => isLoading = false);
     }
