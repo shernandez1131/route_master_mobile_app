@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_google_places_hoc081098/flutter_google_places_hoc081098.dart';
 import 'package:flutter_google_places_hoc081098/google_maps_webservice_places.dart';
@@ -28,10 +30,10 @@ class MapScreen extends PlacesAutocompleteWidget {
 class _MapScreenState extends PlacesAutocompleteState {
   late GoogleMapController mapController;
   Set<Marker> markers = {};
-  Set<Polyline> polylines = {};
+  Map<Polyline, dynamic> polylines = {};
   List<dynamic> _allRoutes = [];
+  List<String> _currentRouteInfo = [];
   int _currentRouteIndex = 0;
-  String _currentRouteInfo = "";
 
   final CameraPosition _initialCameraPosition = const CameraPosition(
     target: LatLng(-12.0461513, -77.0306332),
@@ -67,13 +69,48 @@ class _MapScreenState extends PlacesAutocompleteState {
       body: Stack(
         children: [
           GoogleMap(
-            initialCameraPosition: _initialCameraPosition,
-            onMapCreated: (GoogleMapController controller) {
-              mapController = controller;
-            },
-            markers: markers,
-            polylines: polylines,
-          ),
+              initialCameraPosition: _initialCameraPosition,
+              onMapCreated: (GoogleMapController controller) {
+                mapController = controller;
+              },
+              markers: markers,
+              polylines: polylines.keys.toSet(),
+              onTap: (LatLng tappedPoint) {
+                const threshold = 1.0; // Adjust this value based on your needs
+                double? closestDistance;
+                Map<dynamic, dynamic>? closestStep;
+
+                for (var polyline in polylines.keys) {
+                  for (var point in polyline.points) {
+                    if (polylines[polyline]['travel_mode'] == 'TRANSIT') {
+                      double currentDistance =
+                          _distanceBetween(tappedPoint, point);
+
+                      // Check if this distance is the smallest found so far
+                      if (closestDistance == null ||
+                          currentDistance < closestDistance) {
+                        closestDistance = currentDistance;
+                        closestStep = polylines[polyline];
+                      }
+                    }
+                  }
+                }
+
+                // After looping, check if the closestDistance is within the threshold
+                if (closestDistance != null && closestDistance < threshold) {
+                  // Assuming `transit_details` contains required info, adjust as necessary
+                  var timeToBusStop = (closestStep!['duration']['value'] / 60)
+                      .round(); // Convert to minutes
+                  var headway = closestStep['transit_details']['headway'] ??
+                      10; // Use a default if not provided
+                  var busName = closestStep['transit_details']['line']['name'];
+                  var busShortName =
+                      closestStep['transit_details']['line']['short_name'];
+
+                  showBusDeparturePopup(
+                      context, timeToBusStop, headway, busName, busShortName);
+                }
+              }),
           SafeArea(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -190,61 +227,74 @@ class _MapScreenState extends PlacesAutocompleteState {
                             ),
                           ),
                         )
-                      : const SizedBox(width: 1),
-                  (_allRoutes.isNotEmpty)
-                      ? GestureDetector(
-                          onHorizontalDragEnd: (details) {
-                            // Determine if this was a left or right swipe
-                            if (details.velocity.pixelsPerSecond.dx > 0) {
-                              // Right swipe
-                              if (_currentRouteIndex > 0) {
-                                _currentRouteIndex--;
-                                _displayRoute(_allRoutes[_currentRouteIndex]);
-                              }
-                            } else if (details.velocity.pixelsPerSecond.dx <
-                                0) {
-                              // Left swipe
-                              if (_currentRouteIndex < _allRoutes.length - 1) {
-                                _currentRouteIndex++;
-                                _displayRoute(_allRoutes[_currentRouteIndex]);
-                              }
-                            }
-                          },
-                          child: Positioned(
-                            bottom: 16,
-                            left: 16,
-                            right: 16,
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      spreadRadius: 1,
-                                      blurRadius: 5,
-                                    )
-                                  ]),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Icon(Icons.arrow_back_ios,
-                                      color: Colors.blue),
-                                  Text(_currentRouteInfo),
-                                  Icon(Icons.arrow_forward_ios,
-                                      color: Colors.blue),
-                                ],
-                              ),
-                            ),
-                          ))
-                      : const SizedBox(width: 1),
+                      : const SizedBox(width: 1)
                 ],
               ),
             ),
           ),
+          (_allRoutes.isNotEmpty &&
+                  !searchBoxFocusNode.hasFocus &&
+                  !searchBoxStartingPointFocusNode.hasFocus)
+              ? Positioned(
+                  bottom: 16,
+                  left: 16,
+                  right: 16,
+                  child: GestureDetector(
+                    onHorizontalDragEnd: (details) {
+                      // Determine if this was a left or right swipe
+                      if (details.velocity.pixelsPerSecond.dx > 0) {
+                        // Right swipe
+                        _routeSwipeRight();
+                      } else if (details.velocity.pixelsPerSecond.dx < 0) {
+                        // Left swipe
+                        _routeSwipeLeft();
+                      }
+                    },
+                    child: Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                spreadRadius: 1,
+                                blurRadius: 5,
+                              )
+                            ]),
+                        child: Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                _routeSwipeRight();
+                              },
+                              child: Icon(Icons.arrow_back_ios,
+                                  color: Colors.blue),
+                            ),
+                            Flexible(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment
+                                    .start, // Aligns text to the start
+                                children: [
+                                  ..._currentRouteInfo
+                                      .map((info) => Text(info))
+                                      .toList(),
+                                ],
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                _routeSwipeLeft();
+                              },
+                              child: Icon(Icons.arrow_forward_ios,
+                                  color: Colors.blue),
+                            ),
+                          ],
+                        )),
+                  ),
+                )
+              : const SizedBox(width: 1),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -264,6 +314,24 @@ class _MapScreenState extends PlacesAutocompleteState {
         ],
       ),
     );
+  }
+
+  void _routeSwipeRight() {
+    if (_currentRouteIndex > 0) {
+      _currentRouteIndex--;
+    } else {
+      _currentRouteIndex = _allRoutes.length - 1;
+    }
+    _displayRoute(_allRoutes[_currentRouteIndex]);
+  }
+
+  void _routeSwipeLeft() {
+    if (_currentRouteIndex < _allRoutes.length - 1) {
+      _currentRouteIndex++;
+    } else {
+      _currentRouteIndex = 0;
+    }
+    _displayRoute(_allRoutes[_currentRouteIndex]);
   }
 
   Future<void> fetchAndDisplayDirections(
@@ -298,8 +366,19 @@ class _MapScreenState extends PlacesAutocompleteState {
   }
 
   void _displayRoute(dynamic route) {
-    // Clear existing polylines
     polylines.clear();
+
+    List<Color> busColors = [
+      Colors.green,
+      Colors.deepPurple.shade600,
+      Colors.orange.shade800,
+      Colors.purpleAccent,
+      Colors.teal.shade900,
+      Colors.brown,
+      Colors.cyan.shade600
+    ];
+
+    int currentBusColorIndex = 0;
 
     for (var leg in route['legs']) {
       for (var step in leg['steps']) {
@@ -325,42 +404,48 @@ class _MapScreenState extends PlacesAutocompleteState {
         } else if (step['travel_mode'] == 'TRANSIT') {
           polyline = Polyline(
             polylineId: PolylineId('step${step['start_location']}'),
-            color: Colors.blue,
+            color: busColors[currentBusColorIndex %
+                busColors
+                    .length], // Use modulo to loop back to the start if there are more buses than colors
             width: 5,
             points: stepPolylinePoints,
           );
+          currentBusColorIndex++; // Move to the next color for the next bus
         }
 
         if (polyline != null) {
-          // Ensure polyline has a value before adding
-          polylines.add(polyline);
+          // Associate polyline with its step data
+          polylines[polyline] = step;
         }
       }
     }
 
     // Update the route info in the bottom popup/container
-    String? transitLineName =
-        getFirstTransitLineName(route['legs'][0]['steps']);
-    if (transitLineName != null) {
-      setState(() {
-        _currentRouteInfo =
-            "${route['legs'][0]['duration']['text']} via $transitLineName";
-      });
-    } else {
-      setState(() {
-        _currentRouteInfo = "${route['legs'][0]['duration']['text']}";
-      });
-    }
-  }
+    List<String> routeInfo = [];
+    for (var leg in route['legs']) {
+      for (var step in leg['steps']) {
+        String instruction = step['html_instructions'];
 
-  String? getFirstTransitLineName(List<dynamic> steps) {
-    for (var step in steps) {
-      if (step['travel_mode'] == 'TRANSIT' &&
-          step.containsKey('transit_details')) {
-        return step['transit_details']['line']['short_name'];
+        // Optionally: Strip HTML tags
+        instruction = instruction.replaceAll(RegExp('<[^>]+>'), '');
+
+        // Check if this step is a transit step and has line information
+        if (step['travel_mode'] == 'TRANSIT' &&
+            step.containsKey('transit_details')) {
+          String? lineName = step['transit_details']['line']['short_name'] ??
+              step['transit_details']['line']['name'];
+          if (lineName != null) {
+            instruction += " (vía $lineName)";
+          }
+        }
+
+        routeInfo.add("${step['duration']['text']} - $instruction");
       }
     }
-    return null;
+
+    setState(() {
+      _currentRouteInfo = routeInfo;
+    });
   }
 
   Future<void> displayPrediction(Prediction? p, String type) async {
@@ -458,6 +543,63 @@ class _MapScreenState extends PlacesAutocompleteState {
       searchBoxFocusNode.unfocus();
       searchBoxStartingPointFocusNode.unfocus();
     });
+  }
+
+  void showBusDeparturePopup(BuildContext context, int timeToBusStop,
+      int headway, String busName, String busShortName) {
+    // Calculate future departure times
+    DateTime now = DateTime.now();
+    DateTime firstDepartureTime = now.add(Duration(minutes: timeToBusStop));
+
+    List<DateTime> departureTimes = List.generate(5, (index) {
+      return firstDepartureTime.add(Duration(seconds: headway * index));
+    });
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Bus $busShortName: $busName'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ...departureTimes.map((time) {
+                return Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.0),
+                  child: Text("${time.hour}:${time.minute}"),
+                  // child: Divider(
+                  //   child: Text("${time.hour}:${time.minute}"),
+                  // ),
+                );
+              }).toList(),
+              SizedBox(height: 10),
+              TextButton(
+                child: const Text("Iniciar Viaje"),
+                onPressed: () {
+                  // Handle button press
+                },
+                // decoration: RoundedRectangleBorder(
+                //   borderRadius: BorderRadius.circular(20.0),
+                // ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  double _distanceBetween(LatLng a, LatLng b) {
+    var p = 0.017453292519943295;
+    var c = cos;
+    var a1 = 0.5 -
+        c((b.latitude - a.latitude) * p) / 2 +
+        c(a.latitude * p) *
+            c(b.latitude * p) *
+            (1 - c((b.longitude - a.longitude) * p)) /
+            2;
+    var distance = 12742 * asin(sqrt(a1));
+    return distance;
   }
 
   List<LatLng> _convertToLatLng(List points) {

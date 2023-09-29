@@ -19,7 +19,9 @@ class DirectionsService {
               '&destination=${destination.latitude},${destination.longitude}'
               '&mode=transit'
               '&transit_mode=bus'
-              '&key=$apiKey');
+              '&alternatives=true'
+              '&key=$apiKey'
+              '&language=es');
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
