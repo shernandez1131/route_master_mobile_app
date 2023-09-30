@@ -11,6 +11,7 @@ class Passenger {
   final int paymentMethodId;
   final User? user;
   final PaymentMethod? paymentMethod;
+  final Wallet? wallet;
 
   Passenger(
       {required this.userId,
@@ -22,7 +23,8 @@ class Passenger {
       required this.isActive,
       required this.paymentMethodId,
       this.user,
-      this.paymentMethod});
+      this.paymentMethod,
+      this.wallet});
 
   factory Passenger.fromJson(Map<String, dynamic> json) {
     return Passenger(
@@ -36,6 +38,7 @@ class Passenger {
       paymentMethodId: json['paymentMethodId'],
       user: User.fromJson(json['user']),
       paymentMethod: PaymentMethod.fromJson(json['paymentMethod']),
+      wallet: Wallet.fromJson(json['wallet']),
     );
   }
 }

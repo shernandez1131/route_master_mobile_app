@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../widgets/widgets.dart';
 import '../services/services.dart';
+import 'screens.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({Key? key}) : super(key: key);
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -60,6 +61,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Perfil'),
+        actions: [
+          IconButton(
+            icon: Icon(isReadOnly ? Icons.edit : Icons.save),
+            onPressed: () async {
+              if (!isReadOnly) {
+                setState(() {
+                  isReadOnly = true;
+                  isUpdating = true;
+                });
+                await updatePassengerData().then((value) => setState(() {
+                      isUpdating = false;
+                    }));
+              } else {
+                setState(() {
+                  isReadOnly = false;
+                });
+              }
+            },
+          ),
+        ],
       ),
       body: FutureBuilder<Passenger?>(
         future: passengerFuture,
@@ -92,7 +113,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ListView(
                   children: [
                     CircleAvatar(
-                      radius: 70, // Adjust the size as needed
+                      radius: 50, // Adjust the size as needed
                       child: ClipOval(
                         child: Image.asset('images/profile_icon.png'),
                       ),
@@ -102,6 +123,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.history),
+                                onPressed: () {
+                                  // Navigate to the TransactionHistoryScreen when the history icon is pressed
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          TransactionHistoryScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              Text(
+                                'Saldo: S/${passenger.wallet!.balance.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.add),
+                                onPressed: () {
+                                  // Navigate to the AddFundsScreen when the add icon is pressed
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => AddFundsScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
                           ProfileField(
                             label: 'Nombre(s)',
                             initialValue: passenger.firstName,
@@ -123,26 +179,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             initialValue: "${passenger.phoneNumber}",
                             isReadOnly: isReadOnly,
                             controller: phoneNumberController,
-                          ),
-                          ElevatedButton(
-                            onPressed: () async {
-                              if (!isReadOnly) {
-                                setState(() {
-                                  isReadOnly = true;
-                                  isUpdating = true;
-                                });
-                                await updatePassengerData()
-                                    .then((value) => setState(() {
-                                          isUpdating = false;
-                                        }));
-                                return;
-                              }
-                              setState(() {
-                                isReadOnly = false;
-                              });
-                            },
-                            child:
-                                isReadOnly ? Text('Editar') : Text('Guardar'),
                           ),
                         ],
                       ),
