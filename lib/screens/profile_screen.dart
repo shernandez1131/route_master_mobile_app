@@ -90,7 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child:
                     CircularProgressIndicator()); // Show a loading indicator while fetching data
           } else if (snapshot.hasError || snapshot.data == null) {
-            return Text('Error loading data'); // Handle error
+            return const Text('Error loading data'); // Handle error
           } else {
             final passenger = snapshot.data!;
 
@@ -127,13 +127,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
                               IconButton(
-                                icon: Icon(Icons.history),
+                                icon: const Icon(Icons.history),
                                 onPressed: () {
                                   // Navigate to the TransactionHistoryScreen when the history icon is pressed
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
                                       builder: (context) =>
-                                          TransactionHistoryScreen(),
+                                          const TransactionHistoryScreen(),
                                     ),
                                   );
                                 },
@@ -146,12 +146,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ),
                               IconButton(
-                                icon: Icon(Icons.add),
+                                icon: const Icon(Icons.add),
                                 onPressed: () {
                                   // Navigate to the AddFundsScreen when the add icon is pressed
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
-                                      builder: (context) => AddFundsScreen(),
+                                      builder: (context) => const AddFundsScreen(),
                                     ),
                                   );
                                 },

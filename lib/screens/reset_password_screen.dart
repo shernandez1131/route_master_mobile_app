@@ -32,21 +32,21 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 TextField(
                   controller: newPasswordController,
                   obscureText: true,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'New Password',
                     hintText: 'Enter your new password',
                   ),
                 ),
-                SizedBox(height: 16.0),
+                const SizedBox(height: 16.0),
                 TextField(
                   controller: repeatPasswordController,
                   obscureText: true,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Repeat Password',
                     hintText: 'Repeat your new password',
                   ),
                 ),
-                SizedBox(height: 24.0),
+                const SizedBox(height: 24.0),
                 ElevatedButton(
                   onPressed: () async {
                     FocusScope.of(context).unfocus();
@@ -68,15 +68,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       setState(() {
                         isLoading = false;
                       });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Contraseña actualizada.'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                      final nav = Navigator.of(context);
-                      nav.pop();
-                      nav.pop();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Contraseña actualizada.'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                        final nav = Navigator.of(context);
+                        nav.pop();
+                        nav.pop();
+                      }
                     } else {
                       // Passwords do not match, show an error message
                       ScaffoldMessenger.of(context).showSnackBar(

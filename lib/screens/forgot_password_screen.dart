@@ -81,7 +81,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 TextField(
                   enabled: !isCodeSent,
                   controller: emailController,
-                  decoration: InputDecoration(labelText: 'Email Address'),
+                  decoration: const InputDecoration(labelText: 'Email Address'),
                 ),
                 const SizedBox(height: 20),
                 !isCodeSent
@@ -94,7 +94,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ? TextField(
                         controller: codeController,
                         decoration:
-                            InputDecoration(labelText: 'Ingresa el código'),
+                            const InputDecoration(labelText: 'Ingresa el código'),
                       )
                     : const SizedBox.shrink(),
                 isCodeSent

@@ -4,7 +4,7 @@ class TransactionHistoryScreen extends StatefulWidget {
   const TransactionHistoryScreen({Key? key}) : super(key: key);
 
   @override
-  _TransactionHistoryScreenState createState() =>
+  State<TransactionHistoryScreen> createState() =>
       _TransactionHistoryScreenState();
 }
 
@@ -60,7 +60,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen>
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: ListTile(
-                      leading: Icon(Icons.receipt),
+                      leading: const Icon(Icons.receipt),
                       title: Text(tabData[tabIndex][index]),
                     ),
                   ),
