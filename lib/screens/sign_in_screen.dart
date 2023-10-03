@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../services/login_service.dart';
 import '../models/user_model.dart';
 import 'screens.dart';
@@ -43,6 +44,20 @@ class _SignInScreenState extends State<SignInScreen> {
     }
   }
 
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: <String>[
+      'email',
+    ],
+  );
+
+  Future<void> _handleSignIn() async {
+    try {
+      await _googleSignIn.signIn();
+    } catch (error) {
+      print(error);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,7 +88,8 @@ class _SignInScreenState extends State<SignInScreen> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const ForgotPasswordScreen()));
+                                builder: (context) =>
+                                    const ForgotPasswordScreen()));
                       },
                       child: const Text('¿Olvidaste tu contraseña?'),
                     ),
@@ -106,6 +122,11 @@ class _SignInScreenState extends State<SignInScreen> {
                     );
                   },
                   child: const Text('Registrarse'),
+                ),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: _handleSignIn,
+                  child: const Text('Iniciar sesión con Google'),
                 ),
               ],
             ),

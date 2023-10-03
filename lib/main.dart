@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'screens/sign_in_screen.dart';
 import 'dart:io';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
@@ -18,7 +21,11 @@ class MyApp extends StatelessWidget {
   }
 }
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   HttpOverrides.global = MyHttpOverrides();
   runApp(const MyApp());
 }

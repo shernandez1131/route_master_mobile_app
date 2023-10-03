@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:route_master_mobile_app/services/wallet_service.dart';
 import '../models/models.dart';
 import '../services/login_service.dart';
 import 'map_screen.dart';
@@ -85,8 +86,20 @@ class _CompleteRegisterViewState extends State<CompleteRegisterView> {
                       isActive: true,
                       paymentMethodId: int.parse(paymentMethodController.text),
                     );
+                    final wallet = Wallet(
+                      walletId: 0,
+                      userId: widget.user.userId,
+                      balance: 0,
+                      lastUpdate: DateTime.now(),
+                    );
                     FocusManager.instance.primaryFocus?.unfocus();
-                    await _completeRegister(passenger);
+                    setState(() {
+                      isLoading = true;
+                    });
+                    await _completeRegister(passenger, wallet);
+                    setState(() {
+                      isLoading = false;
+                    });
                   },
                   child: const Text('Completar Registro'),
                 ),
@@ -109,41 +122,33 @@ class _CompleteRegisterViewState extends State<CompleteRegisterView> {
     );
   }
 
-  Future<void> _completeRegister(Passenger passenger) async {
-    try {
-      setState(() => isLoading = true);
-      await loginService.completeRegister(passenger);
-    } catch (e) {
-      // Handle error
-      debugPrint('Complete registration failed: $e');
-    } finally {
-      setState(() => isLoading = false);
-    }
+  Future<void> _completeRegister(Passenger passenger, Wallet wallet) async {
+    final String token;
+    final int userId;
 
     try {
-      setState(() => isLoading = true);
       final User userAuth = User(
           userId: widget.user.userId,
           email: widget.user.email,
           password: widget.password);
       final response = await loginService.authenticate(userAuth);
-      final token = response['token']
+      token = response['token']
           as String; // Assuming 'token' is the key for the bearer token in the response
-      final userId = response['userId'] as int;
+      userId = response['userId'] as int;
       await LoginService.saveToken(token);
-      await LoginService.saveUserId(userId);
-
-      if (context.mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => MapScreen()),
-        );
-      }
+      await LoginService.saveUserId(userId).then((value) => null);
+      await loginService.completeRegister(passenger);
+      await WalletService.postWallet(wallet, token);
     } catch (e) {
       // Handle authentication error
       debugPrint('Authentication failed: $e');
-    } finally {
-      setState(() => isLoading = false);
+    }
+
+    if (context.mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => MapScreen()),
+      );
     }
   }
 

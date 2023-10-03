@@ -1,0 +1,38 @@
+{
+  "project_info": {
+    "project_number": "190291182211",
+    "project_id": "route-master-20231002",
+    "storage_bucket": "route-master-20231002.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:190291182211:android:3b5d4af5de7aec43ca11b6",
+        "android_client_info": {
+          "package_name": "com.example.route_master_mobile_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "190291182211-v2sap2j2of251uqs48mlhvs0mi52chdg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.route_master_mobile_app",
+            "certificate_hash": "a46b41def76b001c3a8cac9f44bf190d65545392"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAYJiwyMpJDySxC_ovVlvQAtQkDhWav6ZQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
