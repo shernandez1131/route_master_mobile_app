@@ -41,6 +41,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       });
       return;
     }
+    await UserService.sendResetPasswordMail(email, token ?? '');
     setState(() {
       isLoading = false;
       isCodeSent = true;
@@ -93,8 +94,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 isCodeSent
                     ? TextField(
                         controller: codeController,
-                        decoration:
-                            const InputDecoration(labelText: 'Ingresa el código'),
+                        decoration: const InputDecoration(
+                            labelText: 'Ingresa el código'),
                       )
                     : const SizedBox.shrink(),
                 isCodeSent

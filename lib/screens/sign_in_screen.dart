@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:route_master_mobile_app/services/user_service.dart';
 import '../services/login_service.dart';
 import '../models/user_model.dart';
 import 'screens.dart';
@@ -46,13 +47,39 @@ class _SignInScreenState extends State<SignInScreen> {
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: <String>[
+      'openid',
       'email',
+      'profile',
     ],
+    signInOption: SignInOption.standard,
+    clientId:
+        '190291182211-m9art6d3h4ai44q1l079c8496f7d861s.apps.googleusercontent.com',
   );
+
+  late GoogleSignInAccount? _currentUser;
 
   Future<void> _handleSignIn() async {
     try {
-      await _googleSignIn.signIn();
+      _currentUser = await _googleSignIn.signIn();
+      if (_currentUser != null) {
+        GoogleSignInAuthentication googleSignInAuthentication =
+            await _currentUser!.authentication;
+        final user = User(
+          userId: 0,
+          username: _currentUser!.id,
+          email: _currentUser!.email,
+          password: "google",
+          token: googleSignInAuthentication.idToken,
+          isActive: true,
+        );
+        try {
+          await UserService.checkEmail(user.email, user.token ?? '');
+          await loginService.register(user);
+        } catch (e) {
+          debugPrint(e.toString());
+        }
+        await _signIn(user);
+      }
     } catch (error) {
       print(error);
     }
