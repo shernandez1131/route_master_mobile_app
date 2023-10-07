@@ -103,7 +103,7 @@ class _MapScreenState extends PlacesAutocompleteState {
                 var timeToBusStop = (closestStep!['duration']['value'] / 60)
                     .round(); // Convert to minutes
                 var headway = closestStep['transit_details']['headway'];
-                var arrivalTime;
+                dynamic arrivalTime;
                 if (headway == null) {
                   arrivalTime =
                       closestStep['transit_details']['arrival_time']['text'];
@@ -260,8 +260,8 @@ class _MapScreenState extends PlacesAutocompleteState {
                     }
                   },
                   child: Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
@@ -279,7 +279,7 @@ class _MapScreenState extends PlacesAutocompleteState {
                                   onTap: () {
                                     _routeSwipeRight();
                                   },
-                                  child: Icon(Icons.arrow_back_ios,
+                                  child: const Icon(Icons.arrow_back_ios,
                                       color: Colors.blue),
                                 )
                               : const SizedBox(width: 1),
@@ -297,12 +297,12 @@ class _MapScreenState extends PlacesAutocompleteState {
 
                                       // If not the first element, prepend an arrow
                                       if (idx != 0) {
-                                        widgets.add(SizedBox(width: 4));
-                                        widgets.add(Icon(
+                                        widgets.add(const SizedBox(width: 4));
+                                        widgets.add(const Icon(
                                             Icons.arrow_forward_ios,
                                             size: 12.0,
                                             color: Colors.grey)); // Arrow icon
-                                        widgets.add(SizedBox(
+                                        widgets.add(const SizedBox(
                                             width: 4)); // Provide some spacing
                                       }
 
@@ -310,7 +310,7 @@ class _MapScreenState extends PlacesAutocompleteState {
                                       if (info['type'] == 'walking') {
                                         widgets.add(Column(
                                           children: [
-                                            Icon(Icons.directions_walk),
+                                            const Icon(Icons.directions_walk),
                                             Text(info['duration'])
                                           ],
                                         ));
@@ -318,7 +318,7 @@ class _MapScreenState extends PlacesAutocompleteState {
                                         widgets.add(Column(
                                           children: [
                                             Container(
-                                              padding: EdgeInsets.all(4),
+                                              padding: const EdgeInsets.all(4),
                                               decoration: BoxDecoration(
                                                   color: Color(getColorFromHex(
                                                       info['color'])),
@@ -326,7 +326,7 @@ class _MapScreenState extends PlacesAutocompleteState {
                                                       BorderRadius.circular(
                                                           10)),
                                               child: Text(info['short_name'],
-                                                  style: TextStyle(
+                                                  style: const TextStyle(
                                                       color: Colors.white)),
                                             ),
                                             Text(info['duration'])
@@ -352,7 +352,7 @@ class _MapScreenState extends PlacesAutocompleteState {
                                   onTap: () {
                                     _routeSwipeLeft();
                                   },
-                                  child: Icon(Icons.arrow_forward_ios,
+                                  child: const Icon(Icons.arrow_forward_ios,
                                       color: Colors.blue),
                                 )
                               : const SizedBox(width: 1),
@@ -370,10 +370,11 @@ class _MapScreenState extends PlacesAutocompleteState {
                 right: 16,
                 child: (!isJourneyStarted)
                     ? ElevatedButton(
-                        onPressed: _startJourney, child: Text("Iniciar Viaje"))
+                        onPressed: _startJourney,
+                        child: const Text("Iniciar Viaje"))
                     : ElevatedButton(
                         onPressed: _payForJourney,
-                        child: Column(
+                        child: const Column(
                           children: [
                             Text("Pagar Pasaje"),
                             Text("Escanear QR"),
@@ -438,7 +439,7 @@ class _MapScreenState extends PlacesAutocompleteState {
   int getColorFromHex(String hexColor) {
     hexColor = hexColor.toUpperCase().replaceAll("#", "");
     if (hexColor.length == 6) {
-      hexColor = "FF" + hexColor;
+      hexColor = "FF$hexColor";
     }
     return int.parse(hexColor, radix: 16);
   }
@@ -470,7 +471,7 @@ class _MapScreenState extends PlacesAutocompleteState {
       }
     } catch (e) {
       // Handle errors
-      print(e);
+      debugPrint(e.toString());
     }
   }
 
@@ -584,12 +585,12 @@ class _MapScreenState extends PlacesAutocompleteState {
 
     updateTextField(p, type);
     // Get detail (lat/lng)
-    final _places = GoogleMapsPlaces(
+    final places = GoogleMapsPlaces(
       apiKey: kGoogleApiKey,
       apiHeaders: await const GoogleApiHeaders().getHeaders(),
     );
 
-    final detail = await _places.getDetailsByPlaceId(p.placeId!);
+    final detail = await places.getDetailsByPlaceId(p.placeId!);
     final geometry = detail.result.geometry!;
     final lat = geometry.location.lat;
     final lng = geometry.location.lng;
@@ -598,8 +599,9 @@ class _MapScreenState extends PlacesAutocompleteState {
     final targetLocation = LatLng(lat, lng);
 
     // Create a Marker object
-    final MarkerId markerId =
-        type == 'start' ? MarkerId('startMarker') : MarkerId('finishMarker');
+    final MarkerId markerId = type == 'start'
+        ? const MarkerId('startMarker')
+        : const MarkerId('finishMarker');
     final BitmapDescriptor markerIcon = type == 'start'
         ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)
         : BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet);
@@ -649,18 +651,18 @@ class _MapScreenState extends PlacesAutocompleteState {
         LatLng? destinationCoords;
 
         // Find the origin and destination coordinates from the markers
-        markers.forEach((marker) {
+        for (var marker in markers) {
           if (marker.markerId.value == 'startMarker') {
             originCoords = marker.position;
           } else if (marker.markerId.value == 'finishMarker') {
             destinationCoords = marker.position;
           }
-        });
+        }
 
         // Check if both origin and destination coordinates are available
         if (originCoords != null && destinationCoords != null) {
           // Call the fetchAndDisplayDirections function with the coordinates
-          fetchAndDisplayDirections(originCoords!, destinationCoords!);
+          fetchAndDisplayDirections(originCoords, destinationCoords);
         }
       } else {
         // If there's only one marker, zoom in on that marker
@@ -710,21 +712,22 @@ class _MapScreenState extends PlacesAutocompleteState {
             children: [
               ...departureTimes.map((time) {
                 return Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: Text("${time.hour}:${time.minute}"),
                   // child: Divider(
                   //   child: Text("${time.hour}:${time.minute}"),
                   // ),
                 );
               }).toList(),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               TextButton(
                 child: (!isJourneyStarted)
                     ? ElevatedButton(
-                        onPressed: _startJourney, child: Text("Iniciar Viaje"))
+                        onPressed: _startJourney,
+                        child: const Text("Iniciar Viaje"))
                     : ElevatedButton(
                         onPressed: _payForJourney,
-                        child: Column(
+                        child: const Column(
                           children: [
                             Text("Pagar Pasaje"),
                             Text("Escanear QR"),

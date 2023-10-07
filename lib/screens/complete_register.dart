@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:route_master_mobile_app/services/wallet_service.dart';
 import '../models/models.dart';
 import '../services/services.dart';
 import 'map_screen.dart';
