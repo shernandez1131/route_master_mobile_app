@@ -9,7 +9,6 @@ import 'package:route_master_mobile_app/services/directions_service.dart';
 import 'package:uuid/uuid.dart';
 //import 'package:route_master_mobile_app/widgets/search_widget.dart';
 import '../constants.dart';
-import 'profile_screen.dart';
 
 final DirectionsService directionsService = DirectionsService(kGoogleApiKey);
 
@@ -137,26 +136,11 @@ class _MapScreenState extends PlacesAutocompleteState {
                       children: [
                         (!searchBoxFocusNode.hasFocus &&
                                 !searchBoxStartingPointFocusNode.hasFocus)
-                            ? GestureDetector(
-                                onTap: () {
-                                  // Handle profile icon click, navigate to profile_view
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const ProfileScreen()),
-                                  );
-                                },
-                                child: const CircleAvatar(
-                                  radius: 20, // Adjust the size as needed
-                                  backgroundImage:
-                                      AssetImage('images/profile_icon.png'),
-                                ),
-                              )
+                            ? const SizedBox.shrink()
                             : const SizedBox.shrink(),
                         (!searchBoxFocusNode.hasFocus &&
                                 !searchBoxStartingPointFocusNode.hasFocus)
-                            ? const SizedBox(width: 12)
+                            ? const SizedBox(width: 0)
                             : const SizedBox(width: 0),
                         !searchBoxFocusNode.hasFocus
                             ? Expanded(
@@ -383,22 +367,6 @@ class _MapScreenState extends PlacesAutocompleteState {
               )
             : const SizedBox(width: 1),
       ]),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.directions),
-            label: 'Directions',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.timeline),
-            label: 'Lines',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.stop),
-            label: 'Stops',
-          ),
-        ],
-      ),
     );
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:route_master_mobile_app/screens/home_screen.dart';
 import 'package:route_master_mobile_app/services/user_service.dart';
 import '../models/user_model.dart';
 import 'screens.dart';
@@ -31,7 +32,7 @@ class _SignInScreenState extends State<SignInScreen> {
       if (context.mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => MapScreen()),
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
           (route) => false,
         );
       }
