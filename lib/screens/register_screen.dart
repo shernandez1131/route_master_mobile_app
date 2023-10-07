@@ -78,10 +78,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const Text('¿O si ya está registrado?'),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
+                    Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
                           builder: (context) => const SignInScreen()),
+                      (route) => false,
                     );
                   },
                   child: const Text('Iniciar Sesión'),

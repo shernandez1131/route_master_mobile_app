@@ -29,9 +29,10 @@ class _SignInScreenState extends State<SignInScreen> {
       await UserService.saveUserId(userId!);
 
       if (context.mounted) {
-        Navigator.push(
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => MapScreen()),
+          (route) => false,
         );
       }
     } catch (e) {
@@ -115,7 +116,7 @@ class _SignInScreenState extends State<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sign In')),
+      appBar: AppBar(title: const Text('Iniciar Sesión')),
       body: Stack(
         children: [
           Padding(

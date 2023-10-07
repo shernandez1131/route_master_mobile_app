@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../models/models.dart';
 import '../widgets/widgets.dart';
 import '../services/services.dart';
@@ -180,6 +181,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             initialValue: "${passenger.phoneNumber}",
                             isReadOnly: isReadOnly,
                             controller: phoneNumberController,
+                          ),
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (GoogleSignIn().currentUser != null) {
+                                await GoogleSignIn().disconnect();
+                              }
+                              if (context.mounted) {
+                                Navigator.of(context).pushAndRemoveUntil(
+                                  MaterialPageRoute(
+                                    builder: (context) => const SignInScreen(),
+                                  ),
+                                  (route) =>
+                                      false, // This effectively removes all routes from the stack
+                                );
+                              }
+                            },
+                            child: const Text('Cerrar Sesión'),
                           ),
                         ],
                       ),
