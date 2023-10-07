@@ -30,8 +30,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<Passenger?> loadPassengerData() async {
-    final int? userId = await LoginService.getUserId();
-    final String? token = await LoginService.getToken();
+    final int? userId = await UserService.getUserId();
+    final String? token = await UserService.getToken();
 
     if (userId != null && token != null) {
       return PassengerService.getPassengerByUserId(userId, token);
@@ -40,8 +40,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<Passenger?> updatePassengerData() async {
-    final int? userId = await LoginService.getUserId();
-    final String? token = await LoginService.getToken();
+    final int? userId = await UserService.getUserId();
+    final String? token = await UserService.getToken();
     if (userId != null && token != null) {
       final Passenger passenger = Passenger(
           userId: userId,
@@ -151,7 +151,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   // Navigate to the AddFundsScreen when the add icon is pressed
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
-                                      builder: (context) => const AddFundsScreen(),
+                                      builder: (context) =>
+                                          const AddFundsScreen(),
                                     ),
                                   );
                                 },

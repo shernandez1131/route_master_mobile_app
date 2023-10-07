@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:route_master_mobile_app/services/user_service.dart';
-import '../services/login_service.dart';
 import '../models/user_model.dart';
 import 'screens.dart';
 
@@ -13,23 +12,21 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
-  final LoginService loginService = LoginService('https://10.0.2.2:7243');
-  // Replace with your actual base URL
-
   bool isLoading = false;
-
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
   Future<void> _signIn(User user) async {
     try {
       setState(() => isLoading = true);
-      final response = await loginService.authenticate(user);
-      final token = response['token']
-          as String; // Assuming 'token' is the key for the bearer token in the response
-      final userId = response['userId'] as int;
-      await LoginService.saveToken(token);
-      await LoginService.saveUserId(userId);
+      final response = await UserService.authenticate(user);
+      if (response == null) {
+        throw Exception('Authentication failed');
+      }
+      final token = response.token;
+      final userId = response.userId;
+      await UserService.saveToken(token!);
+      await UserService.saveUserId(userId!);
 
       if (context.mounted) {
         Navigator.push(
@@ -57,6 +54,8 @@ class _SignInScreenState extends State<SignInScreen> {
   );
 
   late GoogleSignInAccount? _currentUser;
+  late User? existingUser;
+  late User? googleUser;
 
   Future<void> _handleSignIn() async {
     try {
@@ -64,24 +63,52 @@ class _SignInScreenState extends State<SignInScreen> {
       if (_currentUser != null) {
         GoogleSignInAuthentication googleSignInAuthentication =
             await _currentUser!.authentication;
-        final user = User(
-          userId: 0,
-          username: _currentUser!.id,
-          email: _currentUser!.email,
-          password: "google",
-          token: googleSignInAuthentication.idToken,
-          isActive: true,
-        );
+        late User user;
         try {
-          await UserService.checkEmail(user.email, user.token ?? '');
-          await loginService.register(user);
+          existingUser = await UserService.checkEmail(_currentUser!.email);
+          if (existingUser != null) {
+            if (existingUser!.googleId != null) {
+              await _signIn(existingUser!);
+              return;
+            }
+            user = User(
+              userId: existingUser!.userId,
+              username: existingUser!.username,
+              email: existingUser!.email,
+              password: null,
+              token: googleSignInAuthentication.idToken,
+              isActive: true,
+              googleId: _currentUser!.id,
+            );
+            googleUser = await UserService.updateUser(user);
+            if (googleUser != null) {
+              await _signIn(googleUser!);
+            }
+            return;
+          }
+          user = User(
+            email: _currentUser!.email,
+            token: googleSignInAuthentication.idToken,
+            isActive: true,
+            googleId: _currentUser!.id,
+          );
+          user = await UserService.register(user);
+          if (context.mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => CompleteRegisterView(
+                        user: user,
+                        googleUser: _currentUser,
+                      )),
+            );
+          }
         } catch (e) {
           debugPrint(e.toString());
         }
-        await _signIn(user);
       }
     } catch (error) {
-      print(error);
+      debugPrint(error.toString());
     }
   }
 
@@ -152,7 +179,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton(
-                  onPressed: _handleSignIn,
+                  onPressed: () async => await _handleSignIn(),
                   child: const Text('Iniciar sesión con Google'),
                 ),
               ],

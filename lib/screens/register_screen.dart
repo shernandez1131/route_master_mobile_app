@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'complete_register.dart';
-import '../services/login_service.dart';
+import '../services/services.dart';
 import 'sign_in_screen.dart';
 import '../models/user_model.dart';
 
@@ -12,8 +12,6 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final LoginService loginService = LoginService('https://10.0.2.2:7243');
-
   TextEditingController usernameController = TextEditingController();
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
@@ -66,10 +64,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     }
 
                     final user = User(
-                      userId: 0,
                       email: email,
                       password: password,
                       username: username,
+                      isActive: true,
                     );
                     FocusManager.instance.primaryFocus?.unfocus();
                     await register(user);
@@ -110,7 +108,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> register(User user) async {
     try {
       setState(() => isLoading = true);
-      user = await loginService.register(user);
+      user = await UserService.register(user);
 
       if (context.mounted) {
         Navigator.push(

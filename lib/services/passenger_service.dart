@@ -6,7 +6,7 @@ import 'package:route_master_mobile_app/constants.dart';
 import '../models/models.dart';
 
 class PassengerService {
-  static Future<Passenger> getPassengerByUserId(
+  static Future<Passenger?> getPassengerByUserId(
       int userId, String token) async {
     final url = Uri.parse(
         '$kEmulatorLocalhost/api/passengers/$userId'); // Replace with your actual API endpoint URL
@@ -27,7 +27,26 @@ class PassengerService {
     }
   }
 
-  static Future<Passenger> updatePassenger(
+  static Future<Passenger?> createPassenger(Passenger passenger) async {
+    final url = Uri.parse('$kEmulatorLocalhost/api/passengers');
+    final headers = {
+      HttpHeaders.acceptHeader: 'application/json',
+      'Content-Type': 'application/json; charset=UTF-8'
+    };
+    final response = await http.post(
+      url,
+      headers: headers,
+      body: jsonEncode(passenger.toJson()),
+    );
+
+    if (response.statusCode == 200) {
+      return Passenger.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Registration failed');
+    }
+  }
+
+  static Future<Passenger?> updatePassenger(
       int userId, Passenger passenger, String token) async {
     final url = Uri.parse('$kEmulatorLocalhost/api/passengers/$userId');
 
@@ -38,16 +57,7 @@ class PassengerService {
         'Content-Type': 'application/json; charset=UTF-8',
         HttpHeaders.authorizationHeader: 'Bearer $token',
       },
-      body: jsonEncode(
-        <String, dynamic>{
-          'firstName': passenger.firstName,
-          'middleName': passenger.middleName,
-          'lastName': passenger.lastName,
-          'lastName2': passenger.lastName2,
-          'phoneNumber': passenger.phoneNumber,
-          'paymentMethodId': passenger.paymentMethodId,
-        },
-      ),
+      body: jsonEncode(passenger.toJson()),
     );
 
     if (response.statusCode == 200) {

@@ -17,16 +17,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   late User? user;
   bool isLoading = false;
   bool isCodeSent = false;
+  late String? code;
 
-  void _requestReset(BuildContext context) async {
+  Future<void> _requestReset(BuildContext context) async {
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       isLoading = true;
     });
     final String email = emailController.text;
-    final String? token = await LoginService.getToken();
 
-    user = await UserService.checkEmail(email, token ?? '');
+    user = await UserService.checkEmail(email);
 
     if (user == null) {
       if (context.mounted) {
@@ -41,7 +41,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       });
       return;
     }
-    await UserService.sendResetPasswordMail(email, token ?? '');
+    await UserService.sendResetPasswordMail(email)
+        .then((value) => code = value!.token);
     setState(() {
       isLoading = false;
       isCodeSent = true;
@@ -50,7 +51,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   void _validateCode(BuildContext context) {
     if (user != null) {
-      if (user!.token == codeController.text) {
+      if (code == codeController.text) {
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -87,7 +88,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 const SizedBox(height: 20),
                 !isCodeSent
                     ? ElevatedButton(
-                        onPressed: () async => _requestReset(context),
+                        onPressed: () async => await _requestReset(context),
                         child: const Text('Enviar código'),
                       )
                     : const SizedBox.shrink(),

@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:route_master_mobile_app/services/wallet_service.dart';
 import '../models/models.dart';
-import '../services/login_service.dart';
+import '../services/services.dart';
 import 'map_screen.dart';
 
 class CompleteRegisterView extends StatefulWidget {
   final User user;
-  final String password;
+  final String? password;
+  final GoogleSignInAccount? googleUser;
 
   const CompleteRegisterView(
-      {Key? key, required this.user, required this.password})
+      {Key? key, required this.user, this.password, this.googleUser})
       : super(key: key);
 
   @override
@@ -17,11 +19,8 @@ class CompleteRegisterView extends StatefulWidget {
 }
 
 class _CompleteRegisterViewState extends State<CompleteRegisterView> {
-  final LoginService loginService = LoginService(
-      'https://10.0.2.2:7243'); // Replace with your actual base URL
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
-  final TextEditingController lastName2Controller = TextEditingController();
   final TextEditingController phoneNumberController = TextEditingController();
   final TextEditingController paymentMethodController = TextEditingController();
 
@@ -32,6 +31,19 @@ class _CompleteRegisterViewState extends State<CompleteRegisterView> {
   ];
 
   bool isLoading = false;
+
+  //override initstate to set text controllers
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.googleUser != null) {
+      final List<String> names = widget.googleUser!.displayName!.split(' ');
+      firstNameController.text = names[0];
+      lastNameController.text = names[1];
+      paymentMethodController.text = '3';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,15 +57,11 @@ class _CompleteRegisterViewState extends State<CompleteRegisterView> {
               children: [
                 TextField(
                     controller: firstNameController,
-                    decoration: const InputDecoration(labelText: 'Nombres')),
+                    decoration: const InputDecoration(labelText: 'Nombre(s)')),
                 TextField(
                     controller: lastNameController,
                     decoration:
-                        const InputDecoration(labelText: 'Apellido Paterno')),
-                TextField(
-                    controller: lastName2Controller,
-                    decoration:
-                        const InputDecoration(labelText: 'Apellido Materno')),
+                        const InputDecoration(labelText: 'Apellido(s)')),
                 TextField(
                     controller: phoneNumberController,
                     decoration:
@@ -78,17 +86,16 @@ class _CompleteRegisterViewState extends State<CompleteRegisterView> {
                 ElevatedButton(
                   onPressed: () async {
                     final passenger = Passenger(
-                      userId: widget.user.userId,
+                      userId: widget.user.userId!,
                       firstName: firstNameController.text,
                       lastName: lastNameController.text,
-                      lastName2: lastName2Controller.text,
                       phoneNumber: phoneNumberController.text,
                       isActive: true,
                       paymentMethodId: int.parse(paymentMethodController.text),
                     );
                     final wallet = Wallet(
                       walletId: 0,
-                      userId: widget.user.userId,
+                      userId: widget.user.userId!,
                       balance: 0,
                       lastUpdate: DateTime.now(),
                     );
@@ -97,6 +104,13 @@ class _CompleteRegisterViewState extends State<CompleteRegisterView> {
                       isLoading = true;
                     });
                     await _completeRegister(passenger, wallet);
+                    await _createWallet(wallet);
+                    if (context.mounted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => MapScreen()),
+                      );
+                    }
                     setState(() {
                       isLoading = false;
                     });
@@ -123,32 +137,38 @@ class _CompleteRegisterViewState extends State<CompleteRegisterView> {
   }
 
   Future<void> _completeRegister(Passenger passenger, Wallet wallet) async {
-    final String token;
-    final int userId;
+    final String? token;
+    final int? userId;
 
     try {
       final User userAuth = User(
           userId: widget.user.userId,
           email: widget.user.email,
           password: widget.password);
-      final response = await loginService.authenticate(userAuth);
-      token = response['token']
-          as String; // Assuming 'token' is the key for the bearer token in the response
-      userId = response['userId'] as int;
-      await LoginService.saveToken(token);
-      await LoginService.saveUserId(userId).then((value) => null);
-      await loginService.completeRegister(passenger);
-      await WalletService.postWallet(wallet, token);
+      final response = await UserService.authenticate(userAuth);
+      if (response == null) {
+        throw Exception('Authentication failed.');
+      }
+      token = response.token;
+      userId = response.userId;
+      await UserService.saveToken(token!);
+      await UserService.saveUserId(userId!);
+
+      await PassengerService.createPassenger(passenger);
     } catch (e) {
       // Handle authentication error
       debugPrint('Authentication failed: $e');
     }
+  }
 
-    if (context.mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => MapScreen()),
-      );
+  Future<void> _createWallet(Wallet wallet) async {
+    final String? token;
+    token = await UserService.getToken();
+    try {
+      await WalletService.postWallet(wallet, token!);
+    } catch (e) {
+      // Handle authentication error
+      debugPrint('Wallet creation failed: $e');
     }
   }
 
@@ -156,7 +176,6 @@ class _CompleteRegisterViewState extends State<CompleteRegisterView> {
   void dispose() {
     firstNameController.dispose();
     lastNameController.dispose();
-    lastName2Controller.dispose();
     phoneNumberController.dispose();
     paymentMethodController.dispose();
     super.dispose();

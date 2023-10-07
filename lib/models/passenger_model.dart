@@ -41,4 +41,15 @@ class Passenger {
       wallet: Wallet.fromJson(json['wallet']),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'userId': userId,
+        'firstName': firstName,
+        'middleName': middleName,
+        'lastName': lastName,
+        'lastName2': lastName2,
+        'phoneNumber': phoneNumber,
+        'isActive': isActive,
+        'paymentMethodId': paymentMethodId,
+      };
 }

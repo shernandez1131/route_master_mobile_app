@@ -62,9 +62,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           userId: widget.user.userId,
                           email: widget.user.email,
                           password: newPassword,
-                          username: widget.user.username);
-                      final String? token = await LoginService.getToken();
-                      await UserService.updateUser(updatedUser, token);
+                          username: widget.user.username,
+                          isActive: true);
+                      await UserService.updateUser(updatedUser);
                       setState(() {
                         isLoading = false;
                       });
