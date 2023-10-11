@@ -5,9 +5,10 @@ import 'package:flutter_google_places_hoc081098/flutter_google_places_hoc081098.
 import 'package:flutter_google_places_hoc081098/google_maps_webservice_places.dart';
 import 'package:google_api_headers/google_api_headers.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:route_master_mobile_app/screens/qr_scanner.dart';
 import 'package:route_master_mobile_app/services/directions_service.dart';
 import 'package:uuid/uuid.dart';
-//import 'package:route_master_mobile_app/widgets/search_widget.dart';
+import 'package:location/location.dart' as loc;
 import '../constants.dart';
 
 final DirectionsService directionsService = DirectionsService(kGoogleApiKey);
@@ -28,6 +29,8 @@ class MapScreen extends PlacesAutocompleteWidget {
 
 class _MapScreenState extends PlacesAutocompleteState {
   late GoogleMapController mapController;
+  final loc.Location _location = loc.Location();
+  late LatLng _currentLocation;
   Set<Marker> markers = {};
   Map<Polyline, dynamic> polylines = {};
   List<dynamic> _allRoutes = [];
@@ -36,14 +39,14 @@ class _MapScreenState extends PlacesAutocompleteState {
   int _currentRouteIndex = 0;
   bool isJourneyStarted = false;
 
-  final CameraPosition _initialCameraPosition = const CameraPosition(
-    target: LatLng(-12.0461513, -77.0306332),
-    zoom: 11,
-  );
+  // final CameraPosition _initialCameraPosition = const CameraPosition(
+  //   target: LatLng(-12.0461513, -77.0306332),
+  //   zoom: 11,
+  // );
 
   final FocusNode searchBoxFocusNode = FocusNode();
   final FocusNode searchBoxStartingPointFocusNode = FocusNode();
-  List<Prediction> predictions = []; // List to store predictions
+  List<Prediction> predictions = [];
 
   @override
   void initState() {
@@ -61,7 +64,17 @@ class _MapScreenState extends PlacesAutocompleteState {
         setState(() {});
       }
     });
+    _location.onLocationChanged.listen((loc.LocationData currentLocation) {
+      _updateLocation(currentLocation);
+    });
     super.initState();
+  }
+
+  void _updateLocation(loc.LocationData newLocalData) {
+    LatLng latLng = LatLng(newLocalData.latitude!, newLocalData.longitude!);
+    setState(() {
+      _currentLocation = latLng;
+    });
   }
 
   @override
@@ -69,10 +82,15 @@ class _MapScreenState extends PlacesAutocompleteState {
     return Scaffold(
       body: Stack(children: [
         GoogleMap(
-            initialCameraPosition: _initialCameraPosition,
             onMapCreated: (GoogleMapController controller) {
               mapController = controller;
             },
+            myLocationEnabled: true, // Blue dot
+            compassEnabled: true, // Compass
+            initialCameraPosition: CameraPosition(
+              target: _currentLocation,
+              zoom: 15.0,
+            ),
             markers: markers,
             polylines: polylines.keys.toSet(),
             onTap: (LatLng tappedPoint) {
@@ -400,8 +418,17 @@ class _MapScreenState extends PlacesAutocompleteState {
     setState(() {});
   }
 
-  void _payForJourney() {
-    // Your logic to initiate payment
+  void _payForJourney() async {
+    final scannedQRCode = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QRScannerPage(),
+      ),
+    );
+    if (scannedQRCode != null && scannedQRCode is String) {
+      // Process the scanned QR code
+      print('Scanned QR Code: $scannedQRCode');
+    }
   }
 
   int getColorFromHex(String hexColor) {
