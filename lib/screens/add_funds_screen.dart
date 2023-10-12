@@ -11,8 +11,12 @@ class _AddFundsScreenState extends State<AddFundsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Agregar Fondos')),
-      body: const Placeholder(),
+      appBar: AppBar(
+        title: const Text('Agregar fondos'),
+      ),
+      body: const Center(
+        child: Text('Agregar fondos'),
+      ),
     );
   }
 }

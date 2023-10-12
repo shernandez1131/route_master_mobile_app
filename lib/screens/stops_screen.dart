@@ -10,6 +10,13 @@ class StopsScreen extends StatefulWidget {
 class _StopsScreenState extends State<StopsScreen> {
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Paradas'),
+      ),
+      body: const Center(
+        child: Text('Paradas'),
+      ),
+    );
   }
 }

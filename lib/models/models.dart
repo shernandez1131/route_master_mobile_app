@@ -4,3 +4,7 @@ export 'payment_method_model.dart';
 export 'wallet_model.dart';
 export 'transaction_model.dart';
 export 'transaction_type_model.dart';
+export 'bus_line_model.dart';
+export 'bus_stop_model.dart';
+export 'company_model.dart';
+export 'line_type_model.dart';
