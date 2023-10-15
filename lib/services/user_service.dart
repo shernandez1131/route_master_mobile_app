@@ -123,4 +123,14 @@ class UserService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt('user_id');
   }
+
+  static Future<void> saveGoogleSignIn(bool isGoogleSignIn) async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setBool('google_sign_in', isGoogleSignIn);
+  }
+
+  static Future<bool?> getGoogleSignIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('google_sign_in');
+  }
 }

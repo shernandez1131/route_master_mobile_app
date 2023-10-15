@@ -1,14 +1,15 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_google_places_hoc081098/flutter_google_places_hoc081098.dart';
 import 'package:flutter_google_places_hoc081098/google_maps_webservice_places.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_api_headers/google_api_headers.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:route_master_mobile_app/screens/qr_scanner.dart';
 import 'package:route_master_mobile_app/services/directions_service.dart';
 import 'package:uuid/uuid.dart';
-import 'package:location/location.dart' as loc;
 import '../constants.dart';
 
 final DirectionsService directionsService = DirectionsService(kGoogleApiKey);
@@ -29,7 +30,6 @@ class MapScreen extends PlacesAutocompleteWidget {
 
 class _MapScreenState extends PlacesAutocompleteState {
   late GoogleMapController mapController;
-  final loc.Location _location = loc.Location();
   late LatLng _currentLocation;
   Set<Marker> markers = {};
   Map<Polyline, dynamic> polylines = {};
@@ -38,6 +38,11 @@ class _MapScreenState extends PlacesAutocompleteState {
   List<Map<String, dynamic>> routePreviewInfo = [];
   int _currentRouteIndex = 0;
   bool isJourneyStarted = false;
+  final LocationSettings locationSettings = const LocationSettings(
+    accuracy: LocationAccuracy.high,
+    distanceFilter: 1,
+  );
+  late StreamSubscription<Position> positionStream;
 
   // final CameraPosition _initialCameraPosition = const CameraPosition(
   //   target: LatLng(-12.0461513, -77.0306332),
@@ -64,17 +69,70 @@ class _MapScreenState extends PlacesAutocompleteState {
         setState(() {});
       }
     });
-    _location.onLocationChanged.listen((loc.LocationData currentLocation) {
-      _updateLocation(currentLocation);
+    _currentLocation = const LatLng(-12.0461513, -77.0306332);
+    _determinePosition().then((value) {
+      _currentLocation = LatLng(value.latitude, value.longitude);
+      mapController.animateCamera(CameraUpdate.newLatLng(_currentLocation));
+    });
+    positionStream =
+        Geolocator.getPositionStream(locationSettings: locationSettings)
+            .listen((Position? position) {
+      if (position != null) {
+        setState(() {
+          _currentLocation = LatLng(position.latitude, position.longitude);
+        });
+      }
     });
     super.initState();
   }
 
-  void _updateLocation(loc.LocationData newLocalData) {
-    LatLng latLng = LatLng(newLocalData.latitude!, newLocalData.longitude!);
-    setState(() {
-      _currentLocation = latLng;
-    });
+  @override
+  void dispose() {
+    searchBoxFocusNode.dispose();
+    searchBoxStartingPointFocusNode.dispose();
+    positionStream.cancel();
+    super.dispose();
+  }
+
+  /// Determine the current position of the device.
+  ///
+  /// When the location services are not enabled or permissions
+  /// are denied the `Future` will return an error.
+  Future<Position> _determinePosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Test if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are not enabled don't continue
+      // accessing the position and request users of the
+      // App to enable the location services.
+      return Future.error('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        // Permissions are denied, next time you could try
+        // requesting permissions again (this is also where
+        // Android's shouldShowRequestPermissionRationale
+        // returned true. According to Android guidelines
+        // your App should show an explanatory UI now.
+        return Future.error('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately.
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+
+    // When we reach here, permissions are granted and we can
+    // continue accessing the position of the device.
+    return await Geolocator.getCurrentPosition();
   }
 
   @override
@@ -86,7 +144,9 @@ class _MapScreenState extends PlacesAutocompleteState {
               mapController = controller;
             },
             myLocationEnabled: true, // Blue dot
-            compassEnabled: true, // Compass
+            myLocationButtonEnabled: false,
+            compassEnabled: false, // Compass
+            zoomControlsEnabled: false,
             initialCameraPosition: CameraPosition(
               target: _currentLocation,
               zoom: 15.0,
@@ -385,6 +445,15 @@ class _MapScreenState extends PlacesAutocompleteState {
               )
             : const SizedBox(width: 1),
       ]),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          mapController.animateCamera(CameraUpdate.newLatLng(_currentLocation));
+        },
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30.0),
+        ),
+        child: const Icon(Icons.my_location),
+      ),
     );
   }
 
@@ -422,12 +491,12 @@ class _MapScreenState extends PlacesAutocompleteState {
     final scannedQRCode = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => QRScannerPage(),
+        builder: (context) => const QRScannerPage(),
       ),
     );
     if (scannedQRCode != null && scannedQRCode is String) {
       // Process the scanned QR code
-      print('Scanned QR Code: $scannedQRCode');
+      debugPrint('Scanned QR Code: $scannedQRCode');
     }
   }
 

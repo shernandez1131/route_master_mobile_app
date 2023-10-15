@@ -1,3 +1,4 @@
+import 'package:diacritic/diacritic.dart';
 import 'package:flutter/material.dart';
 import 'package:grouped_list/grouped_list.dart';
 import 'package:route_master_mobile_app/extensions.dart';
@@ -240,12 +241,12 @@ class _LinesScreenState extends State<LinesScreen> {
                     children: [
                       Text(
                         element['companyName'],
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.normal),
                       ),
                       Text(
                         element['busLineTypeName'],
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.normal),
                       )
                     ],
@@ -265,9 +266,9 @@ class _LinesScreenState extends State<LinesScreen> {
                         boxShadow: [
                           BoxShadow(
                             color: element['color'],
-                            spreadRadius: 1,
-                            blurRadius: 2,
-                            offset: const Offset(1, 2),
+                            spreadRadius: 0,
+                            blurRadius: 0,
+                            offset: const Offset(5, 0),
                           ),
                         ]),
                     width: element['code'].length == 3
@@ -277,8 +278,9 @@ class _LinesScreenState extends State<LinesScreen> {
                             : 77,
                     child: Row(
                       children: [
-                        Icon(Icons.directions_bus),
-                        Text(element['code'], style: TextStyle(fontSize: 15)),
+                        const Icon(Icons.directions_bus),
+                        Text(element['code'],
+                            style: const TextStyle(fontSize: 15)),
                       ],
                     ),
                   ),
@@ -295,13 +297,15 @@ class _LinesScreenState extends State<LinesScreen> {
 
   void filterBusLines(String query) {
     setState(() {
+      query = removeDiacritics(query).toLowerCase();
       displayedBusLines = allBusLines
           .where((line) =>
-              line.code.toLowerCase().contains(query.toLowerCase()) ||
-              line.firstStop.toLowerCase().contains(query.toLowerCase()) ||
-              line.lastStop.toLowerCase().contains(query.toLowerCase()) ||
-              line.company!.name.toLowerCase().contains(query.toLowerCase()) ||
-              line.lineType!.name.toLowerCase().contains(query.toLowerCase()))
+              removeDiacritics(line.code).toLowerCase().contains(query) ||
+              removeDiacritics(line.firstStop).toLowerCase().contains(query) ||
+              removeDiacritics(line.lastStop).toLowerCase().contains(query) ||
+              removeDiacritics(line.company!.name)
+                  .toLowerCase()
+                  .contains(query))
           .toList();
     });
   }

@@ -60,8 +60,13 @@ class _SignInScreenState extends State<SignInScreen> {
   late User? googleUser;
 
   Future<void> _handleSignIn() async {
+    setState(() => isLoading = true);
     try {
       _currentUser = await _googleSignIn.signIn();
+
+      // This line fixes the crash
+      if (_currentUser == null) throw Exception("Not logged in");
+
       if (_currentUser != null) {
         GoogleSignInAuthentication googleSignInAuthentication =
             await _currentUser!.authentication;
@@ -71,6 +76,7 @@ class _SignInScreenState extends State<SignInScreen> {
           if (existingUser != null) {
             if (existingUser!.googleId != null) {
               await _signIn(existingUser!);
+              await UserService.saveGoogleSignIn(true);
               return;
             }
             user = User(
@@ -85,6 +91,7 @@ class _SignInScreenState extends State<SignInScreen> {
             googleUser = await UserService.updateUser(user);
             if (googleUser != null) {
               await _signIn(googleUser!);
+              await UserService.saveGoogleSignIn(true);
             }
             return;
           }
@@ -112,6 +119,7 @@ class _SignInScreenState extends State<SignInScreen> {
     } catch (error) {
       debugPrint(error.toString());
     }
+    setState(() => isLoading = false);
   }
 
   @override
@@ -163,6 +171,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     );
                     FocusManager.instance.primaryFocus?.unfocus();
                     await _signIn(user);
+                    await UserService.saveGoogleSignIn(false);
                   },
                   child: const Text('Iniciar Sesión'),
                 ),

@@ -5,7 +5,7 @@ import 'package:route_master_mobile_app/screens/map_screen.dart';
 class TicketInfoScreen extends StatelessWidget {
   final Ticket ticket;
 
-  TicketInfoScreen({required this.ticket});
+  const TicketInfoScreen({super.key, required this.ticket});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,7 @@ class TicketInfoScreen extends StatelessWidget {
             top: 60,
             left: 35,
             child: IconButton(
-              icon: Icon(Icons.arrow_back_ios, color: Colors.black),
+              icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
               onPressed: () => Navigator.pop(context),
             ),
           ),
@@ -34,7 +34,7 @@ class TicketInfoScreen extends StatelessWidget {
             right: 0,
             child: Text(
               ticket.companyName,
-              style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
           ),
@@ -45,7 +45,7 @@ class TicketInfoScreen extends StatelessWidget {
             right: 0,
             child: Text(
               ticket.busName,
-              style: TextStyle(fontSize: 32),
+              style: const TextStyle(fontSize: 32),
               textAlign: TextAlign.center,
             ),
           ),
@@ -56,7 +56,7 @@ class TicketInfoScreen extends StatelessWidget {
               children: ticket.fares.entries
                   .map((e) => Text(
                         '${e.key}: s/${e.value}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 18,
                         ),
                       ))
@@ -73,7 +73,8 @@ class TicketInfoScreen extends StatelessWidget {
                 // Ticket Number
                 Text(
                   '#${ticket.number.toString().padLeft(7, '0')}',
-                  style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 35, fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
                 // Aceptar Button
@@ -82,7 +83,7 @@ class TicketInfoScreen extends StatelessWidget {
                     context,
                     MaterialPageRoute(builder: (context) => MapScreen()),
                   ),
-                  child: Text('Aceptar'),
+                  child: const Text('Aceptar'),
                 ),
               ],
             ),

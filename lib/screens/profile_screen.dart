@@ -184,7 +184,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           ElevatedButton(
                             onPressed: () async {
-                              if (GoogleSignIn().currentUser != null) {
+                              bool? isGoogleSignIn =
+                                  await UserService.getGoogleSignIn();
+                              if (isGoogleSignIn != null && isGoogleSignIn) {
                                 await GoogleSignIn().disconnect();
                               }
                               if (context.mounted) {

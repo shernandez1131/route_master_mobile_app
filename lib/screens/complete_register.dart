@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:route_master_mobile_app/screens/home_screen.dart';
 import '../models/models.dart';
 import '../services/services.dart';
-import 'map_screen.dart';
 
 class CompleteRegisterView extends StatefulWidget {
   final User user;
@@ -104,10 +104,12 @@ class _CompleteRegisterViewState extends State<CompleteRegisterView> {
                     });
                     await _completeRegister(passenger, wallet);
                     await _createWallet(wallet);
+                    await UserService.saveGoogleSignIn(false);
                     if (context.mounted) {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => MapScreen()),
+                        MaterialPageRoute(
+                            builder: (context) => const HomeScreen()),
                       );
                     }
                     setState(() {
