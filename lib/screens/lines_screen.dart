@@ -22,7 +22,6 @@ class _LinesScreenState extends State<LinesScreen> {
       company: Company(
         companyId: 1,
         name: 'Corredor Rojo',
-        ruc: '12345678901',
       ),
       companyId: 1,
       lineType: LineType(
@@ -40,7 +39,6 @@ class _LinesScreenState extends State<LinesScreen> {
       company: Company(
         companyId: 1,
         name: 'Corredor Rojo',
-        ruc: '12345678901',
       ),
       companyId: 1,
       lineType: LineType(
@@ -58,7 +56,6 @@ class _LinesScreenState extends State<LinesScreen> {
       company: Company(
         companyId: 1,
         name: 'Corredor Rojo',
-        ruc: '12345678901',
       ),
       companyId: 1,
       lineType: LineType(
@@ -76,7 +73,6 @@ class _LinesScreenState extends State<LinesScreen> {
       company: Company(
         companyId: 1,
         name: 'Corredor Rojo',
-        ruc: '12345678901',
       ),
       companyId: 1,
       lineType: LineType(
@@ -94,7 +90,6 @@ class _LinesScreenState extends State<LinesScreen> {
       company: Company(
         companyId: 1,
         name: 'Corredor Azul',
-        ruc: '12345678901',
       ),
       companyId: 1,
       lineType: LineType(
@@ -112,7 +107,6 @@ class _LinesScreenState extends State<LinesScreen> {
       company: Company(
         companyId: 1,
         name: 'Corredor Azul',
-        ruc: '12345678901',
       ),
       companyId: 1,
       lineType: LineType(
@@ -130,7 +124,6 @@ class _LinesScreenState extends State<LinesScreen> {
       company: Company(
         companyId: 1,
         name: 'Corredor Azul',
-        ruc: '12345678901',
       ),
       companyId: 1,
       lineType: LineType(
@@ -148,7 +141,6 @@ class _LinesScreenState extends State<LinesScreen> {
       company: Company(
         companyId: 1,
         name: 'Corredor Azul',
-        ruc: '12345678901',
       ),
       companyId: 1,
       lineType: LineType(
@@ -166,7 +158,6 @@ class _LinesScreenState extends State<LinesScreen> {
       company: Company(
         companyId: 1,
         name: 'Corredor Azul',
-        ruc: '12345678901',
       ),
       companyId: 1,
       lineType: LineType(
