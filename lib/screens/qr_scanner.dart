@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:route_master_mobile_app/models/ticket_model.dart';
 import 'package:route_master_mobile_app/screens/ticket_info_screen.dart';
+import 'package:route_master_mobile_app/services/services.dart';
 import 'package:scan/scan.dart';
 import 'dart:convert';
 
@@ -132,8 +133,12 @@ class _QRScannerPageState extends State<QRScannerPage> {
           decodedData.containsKey('fares') &&
           decodedData['fares'] is Map) {
         // Create a Ticket instance
-        Ticket ticket = Ticket.fromJson(decodedData);
-
+        Ticket tempTicket = Ticket.fromJson(decodedData);
+        tempTicket.userId = (await UserService.getUserId())!;
+        var ticket = await TicketService.postTicket(
+            tempTicket, (await UserService.getToken())!);
+        ticket.amount = 0.0;
+        ticket.fares = tempTicket.fares;
         // Navigate to the next screen
         Navigator.push(
           context,

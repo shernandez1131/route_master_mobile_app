@@ -8,7 +8,7 @@ import '../models/models.dart';
 
 class UserService {
   static Future<User?> authenticate(User user) async {
-    final url = Uri.parse('$kEmulatorLocalhost/api/users/authenticate');
+    final url = Uri.parse('$kDeployedUrl/api/users/authenticate');
     final headers = {
       HttpHeaders.acceptHeader: 'application/json',
       'Content-Type': 'application/json; charset=UTF-8'
@@ -27,7 +27,7 @@ class UserService {
   }
 
   static Future<User> register(User user) async {
-    final url = Uri.parse('$kEmulatorLocalhost/api/users');
+    final url = Uri.parse('$kDeployedUrl/api/users');
     final headers = {
       'Content-Type': 'application/json',
     };
@@ -42,7 +42,7 @@ class UserService {
   }
 
   static Future<User?> checkEmail(String email) async {
-    final url = Uri.parse('$kEmulatorLocalhost/api/users/get-by-email');
+    final url = Uri.parse('$kDeployedUrl/api/users/get-by-email');
 
     final response = await http.post(
       url,
@@ -65,8 +65,7 @@ class UserService {
   }
 
   static Future<User?> sendResetPasswordMail(String email) async {
-    final url =
-        Uri.parse('$kEmulatorLocalhost/api/users/send-reset-password-email');
+    final url = Uri.parse('$kDeployedUrl/api/users/send-reset-password-email');
 
     final response = await http.post(
       url,
@@ -89,7 +88,7 @@ class UserService {
   }
 
   static Future<User?> updateUser(User user) async {
-    final url = Uri.parse('$kEmulatorLocalhost/api/users/${user.userId}');
+    final url = Uri.parse('$kDeployedUrl/api/users/${user.userId}');
     final response = await http.put(url,
         headers: <String, String>{
           HttpHeaders.acceptHeader: 'application/json',

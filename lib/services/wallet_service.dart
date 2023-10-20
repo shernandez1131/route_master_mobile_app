@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 
 class WalletService {
   static Future<Wallet> postWallet(Wallet wallet, String token) async {
-    final url = Uri.parse('$kEmulatorLocalhost/api/wallets');
+    final url = Uri.parse('$kDeployedUrl/api/wallets');
 
     final response = await http.post(
       url,
@@ -33,7 +33,7 @@ class WalletService {
   }
 
   static Future<Wallet> putWallet(Wallet wallet, String token) async {
-    final url = Uri.parse('$kEmulatorLocalhost/api/wallets/${wallet.walletId}');
+    final url = Uri.parse('$kDeployedUrl/api/wallets/${wallet.walletId}');
 
     final response = await http.put(
       url,

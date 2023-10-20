@@ -40,18 +40,14 @@ class _MapScreenState extends PlacesAutocompleteState {
   bool isJourneyStarted = false;
   final LocationSettings locationSettings = const LocationSettings(
     accuracy: LocationAccuracy.high,
-    distanceFilter: 1,
+    distanceFilter: 5,
   );
   late StreamSubscription<Position> positionStream;
-
-  // final CameraPosition _initialCameraPosition = const CameraPosition(
-  //   target: LatLng(-12.0461513, -77.0306332),
-  //   zoom: 11,
-  // );
-
   final FocusNode searchBoxFocusNode = FocusNode();
   final FocusNode searchBoxStartingPointFocusNode = FocusNode();
   List<Prediction> predictions = [];
+  dynamic currentRoute;
+  late List<LatLng> finalStopsList = [];
 
   @override
   void initState() {
@@ -463,6 +459,7 @@ class _MapScreenState extends PlacesAutocompleteState {
     } else {
       _currentRouteIndex = _allRoutes.length - 1;
     }
+    currentRoute = _allRoutes[_currentRouteIndex];
     _displayRoute(_allRoutes[_currentRouteIndex]);
   }
 
@@ -472,6 +469,7 @@ class _MapScreenState extends PlacesAutocompleteState {
     } else {
       _currentRouteIndex = 0;
     }
+    currentRoute = _allRoutes[_currentRouteIndex];
     _displayRoute(_allRoutes[_currentRouteIndex]);
   }
 
@@ -484,6 +482,30 @@ class _MapScreenState extends PlacesAutocompleteState {
 
     // Switch to detailed view in the Positioned widget
     isJourneyStarted = true;
+
+    // Extract and populate finalStopsList with LatLng coordinates
+    finalStopsList.clear(); // Clear the list to start fresh
+
+    if (currentRoute != null && currentRoute['legs'] != null) {
+      for (var leg in currentRoute['legs']) {
+        for (var step in leg['steps']) {
+          if (step['travel_mode'] == 'TRANSIT') {
+            final transitDetails = step['transit_details'];
+            if (transitDetails != null) {
+              final arrivalStop = transitDetails['arrival_stop'];
+              if (arrivalStop != null) {
+                final stopLocation = LatLng(
+                  arrivalStop['location']['lat'],
+                  arrivalStop['location']['lng'],
+                );
+                finalStopsList.add(stopLocation);
+              }
+            }
+          }
+        }
+      }
+    }
+
     setState(() {});
   }
 
@@ -529,6 +551,7 @@ class _MapScreenState extends PlacesAutocompleteState {
         // Store all routes for swipe navigation
         _allRoutes = routes;
         _currentRouteIndex = 0; // Start with the quickest route
+        currentRoute = _allRoutes[_currentRouteIndex];
 
         // Initially, display the quickest route
         _displayRoute(routes[0]);

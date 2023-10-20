@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:route_master_mobile_app/models/ticket_model.dart';
-import 'package:route_master_mobile_app/screens/map_screen.dart';
 
 class TicketInfoScreen extends StatelessWidget {
   final Ticket ticket;
@@ -79,10 +78,10 @@ class TicketInfoScreen extends StatelessWidget {
                 ),
                 // Aceptar Button
                 ElevatedButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => MapScreen()),
-                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                  },
                   child: const Text('Aceptar'),
                 ),
               ],

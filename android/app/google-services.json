@@ -18,8 +18,12 @@
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.route_master_mobile_app",
-            "certificate_hash": "a46b41def76b001c3a8cac9f44bf190d65545392"
+            "certificate_hash": "a0d50f8f6e2beec89d84750f740087d68bb05333"
           }
+        },
+        {
+          "client_id": "190291182211-m9art6d3h4ai44q1l079c8496f7d861s.apps.googleusercontent.com",
+          "client_type": 3
         }
       ],
       "api_key": [
@@ -29,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "190291182211-m9art6d3h4ai44q1l079c8496f7d861s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

@@ -9,7 +9,7 @@ class PassengerService {
   static Future<Passenger?> getPassengerByUserId(
       int userId, String token) async {
     final url = Uri.parse(
-        '$kEmulatorLocalhost/api/passengers/$userId'); // Replace with your actual API endpoint URL
+        '$kDeployedUrl/api/passengers/$userId'); // Replace with your actual API endpoint URL
 
     final response = await http.get(
       url,
@@ -28,7 +28,7 @@ class PassengerService {
   }
 
   static Future<Passenger?> createPassenger(Passenger passenger) async {
-    final url = Uri.parse('$kEmulatorLocalhost/api/passengers');
+    final url = Uri.parse('$kDeployedUrl/api/passengers');
     final headers = {
       HttpHeaders.acceptHeader: 'application/json',
       'Content-Type': 'application/json; charset=UTF-8'
@@ -48,7 +48,7 @@ class PassengerService {
 
   static Future<Passenger?> updatePassenger(
       int userId, Passenger passenger, String token) async {
-    final url = Uri.parse('$kEmulatorLocalhost/api/passengers/$userId');
+    final url = Uri.parse('$kDeployedUrl/api/passengers/$userId');
 
     final response = await http.put(
       url,
