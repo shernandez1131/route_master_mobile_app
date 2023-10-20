@@ -1,7 +1,7 @@
 import 'models.dart';
 
 class BusLine {
-  final int busLineId;
+  final int lineId;
   final String code;
   final String firstStop;
   final String lastStop;
@@ -9,11 +9,11 @@ class BusLine {
   final String color;
   final Company? company;
   final int companyId;
-  final LineType? lineType;
-  final int lineTypeId;
+  final VehicleType? vehicleType;
+  final int vehicleTypeId;
 
   BusLine({
-    required this.busLineId,
+    required this.lineId,
     required this.code,
     required this.firstStop,
     required this.lastStop,
@@ -21,13 +21,13 @@ class BusLine {
     required this.color,
     this.company,
     required this.companyId,
-    this.lineType,
-    required this.lineTypeId,
+    this.vehicleType,
+    required this.vehicleTypeId,
   });
 
   factory BusLine.fromJson(Map<String, dynamic> json) {
     return BusLine(
-      busLineId: json['busLineId'],
+      lineId: json['lineId'],
       code: json['code'],
       firstStop: json['firstStop'],
       lastStop: json['lastStop'],
@@ -35,8 +35,8 @@ class BusLine {
       color: json['color'],
       company: Company.fromJson(json['company']),
       companyId: json['companyId'],
-      lineType: LineType.fromJson(json['lineType']),
-      lineTypeId: json['lineTypeId'],
+      vehicleType: VehicleType.fromJson(json['vehicleType']),
+      vehicleTypeId: json['vehicleTypeId'],
     );
   }
 }

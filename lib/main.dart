@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'screens/sign_in_screen.dart';
-import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';

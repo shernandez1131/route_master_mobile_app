@@ -7,5 +7,5 @@ export 'transaction_type_model.dart';
 export 'bus_line_model.dart';
 export 'bus_stop_model.dart';
 export 'company_model.dart';
-export 'line_type_model.dart';
+export 'vehicle_type_model.dart';
 export 'ticket_model.dart';
