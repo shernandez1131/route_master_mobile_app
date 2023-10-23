@@ -11,6 +11,8 @@ class BusLine {
   final int companyId;
   final VehicleType? vehicleType;
   final int vehicleTypeId;
+  final String? oldCode;
+  final String? logo;
 
   BusLine({
     required this.lineId,
@@ -23,6 +25,8 @@ class BusLine {
     required this.companyId,
     this.vehicleType,
     required this.vehicleTypeId,
+    this.oldCode,
+    this.logo,
   });
 
   factory BusLine.fromJson(Map<String, dynamic> json) {
@@ -37,6 +41,8 @@ class BusLine {
       companyId: json['companyId'],
       vehicleType: VehicleType.fromJson(json['vehicleType']),
       vehicleTypeId: json['vehicleTypeId'],
+      oldCode: json['oldCode'],
+      logo: json['logo'],
     );
   }
 }
