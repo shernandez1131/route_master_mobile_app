@@ -7,12 +7,30 @@ import 'package:flutter_google_places_hoc081098/google_maps_webservice_places.da
 import 'package:geolocator/geolocator.dart';
 import 'package:google_api_headers/google_api_headers.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:route_master_mobile_app/models/models.dart';
 import 'package:route_master_mobile_app/screens/qr_scanner.dart';
 import 'package:route_master_mobile_app/services/directions_service.dart';
 import 'package:uuid/uuid.dart';
 import '../constants.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+import '../services/services.dart';
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+// Initialize the notification details
+final AndroidNotificationDetails androidPlatformChannelSpecifics =
+    AndroidNotificationDetails(
+  'routemaster_channel_id',
+  'RouteMaster',
+  importance: Importance.max,
+  priority: Priority.high,
+);
 
 final DirectionsService directionsService = DirectionsService(kGoogleApiKey);
+final NotificationDetails platformChannelSpecifics =
+    NotificationDetails(android: androidPlatformChannelSpecifics);
 
 class MapScreen extends PlacesAutocompleteWidget {
   MapScreen({Key? key})
@@ -48,6 +66,7 @@ class _MapScreenState extends PlacesAutocompleteState {
   List<Prediction> predictions = [];
   dynamic currentRoute;
   late List<LatLng> finalStopsList = [];
+  late List<BusLine> busLinesList = [];
 
   @override
   void initState() {
@@ -69,6 +88,11 @@ class _MapScreenState extends PlacesAutocompleteState {
     _determinePosition().then((value) {
       _currentLocation = LatLng(value.latitude, value.longitude);
       mapController.animateCamera(CameraUpdate.newLatLng(_currentLocation));
+      fetchBusLines().then((data) {
+        setState(() {
+          busLinesList = data;
+        });
+      });
     });
     positionStream =
         Geolocator.getPositionStream(locationSettings: locationSettings)
@@ -77,6 +101,18 @@ class _MapScreenState extends PlacesAutocompleteState {
         setState(() {
           _currentLocation = LatLng(position.latitude, position.longitude);
         });
+        // Check proximity to stops
+        final double proximityThreshold = 50.0; // Adjust this value as needed
+
+        for (LatLng stopLocation in finalStopsList) {
+          double distanceToStop =
+              _distanceBetween(_currentLocation, stopLocation);
+
+          if (distanceToStop <= proximityThreshold) {
+            // User is close to a stop; show a notification
+            _showProximityNotification();
+          }
+        }
       }
     });
     super.initState();
@@ -90,20 +126,12 @@ class _MapScreenState extends PlacesAutocompleteState {
     super.dispose();
   }
 
-  /// Determine the current position of the device.
-  ///
-  /// When the location services are not enabled or permissions
-  /// are denied the `Future` will return an error.
   Future<Position> _determinePosition() async {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Test if location services are enabled.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // Location services are not enabled don't continue
-      // accessing the position and request users of the
-      // App to enable the location services.
       return Future.error('Location services are disabled.');
     }
 
@@ -111,23 +139,15 @@ class _MapScreenState extends PlacesAutocompleteState {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        // Permissions are denied, next time you could try
-        // requesting permissions again (this is also where
-        // Android's shouldShowRequestPermissionRationale
-        // returned true. According to Android guidelines
-        // your App should show an explanatory UI now.
         return Future.error('Location permissions are denied');
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately.
       return Future.error(
           'Location permissions are permanently denied, we cannot request permissions.');
     }
 
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
     return await Geolocator.getCurrentPosition();
   }
 
@@ -304,46 +324,37 @@ class _MapScreenState extends PlacesAutocompleteState {
                 bottom: 66,
                 left: 16,
                 right: 16,
-                child: GestureDetector(
-                  onHorizontalDragEnd: (details) {
-                    // Determine if this was a left or right swipe
-                    if (!isJourneyStarted) {
-                      if (details.velocity.pixelsPerSecond.dx > 0) {
-                        // Right swipe
-                        _routeSwipeRight();
-                      } else if (details.velocity.pixelsPerSecond.dx < 0) {
-                        // Left swipe
-                        _routeSwipeLeft();
-                      }
-                    }
-                  },
-                  child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              spreadRadius: 1,
-                              blurRadius: 5,
-                            )
-                          ]),
-                      child: Row(
-                        children: [
-                          (!isJourneyStarted)
-                              ? GestureDetector(
-                                  onTap: () {
-                                    _routeSwipeRight();
-                                  },
-                                  child: const Icon(Icons.arrow_back_ios,
-                                      color: Colors.blue),
-                                )
-                              : const SizedBox(width: 1),
-                          Flexible(
-                            child: !isJourneyStarted
-                                ? Row(
+                child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 5,
+                          )
+                        ]),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        (!isJourneyStarted)
+                            ? GestureDetector(
+                                onTap: () {
+                                  _routeSwipeRight();
+                                },
+                                child: const Icon(Icons.arrow_back_ios,
+                                    color: Colors.blue),
+                              )
+                            : const SizedBox(width: 1),
+                        Flexible(
+                          child: !isJourneyStarted
+                              ? SingleChildScrollView(
+                                  scrollDirection: Axis
+                                      .horizontal, // Allow horizontal scrolling
+                                  child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: routePreviewInfo
                                         .asMap()
@@ -394,29 +405,27 @@ class _MapScreenState extends PlacesAutocompleteState {
 
                                       return widgets;
                                     }).toList(),
-                                  )
-                                : Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      ..._currentRouteInfo
-                                          .map((info) => Text(info))
-                                          .toList(),
-                                    ],
-                                  ),
-                          ),
-                          (!isJourneyStarted)
-                              ? GestureDetector(
-                                  onTap: () {
-                                    _routeSwipeLeft();
-                                  },
-                                  child: const Icon(Icons.arrow_forward_ios,
-                                      color: Colors.blue),
-                                )
-                              : const SizedBox(width: 1),
-                        ],
-                      )),
-                ),
+                                  ))
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ..._currentRouteInfo
+                                        .map((info) => Text(info))
+                                        .toList(),
+                                  ],
+                                ),
+                        ),
+                        (!isJourneyStarted)
+                            ? GestureDetector(
+                                onTap: () {
+                                  _routeSwipeLeft();
+                                },
+                                child: const Icon(Icons.arrow_forward_ios,
+                                    color: Colors.blue),
+                              )
+                            : const SizedBox(width: 1),
+                      ],
+                    )),
               )
             : const SizedBox(width: 1),
         (_allRoutes.isNotEmpty &&
@@ -427,23 +436,74 @@ class _MapScreenState extends PlacesAutocompleteState {
                 left: 16,
                 right: 16,
                 child: (!isJourneyStarted)
-                    ? ElevatedButton(
-                        onPressed: _startJourney,
-                        child: const Text("Iniciar Viaje"))
-                    : ElevatedButton(
-                        onPressed: _payForJourney,
-                        child: const Column(
-                          children: [
-                            Text("Pagar Pasaje"),
-                            Text("Escanear QR"),
-                          ],
-                        )),
+                    ? FractionallySizedBox(
+                        widthFactor: 0.6,
+                        child: ElevatedButton(
+                          onPressed: _startJourney,
+                          child: Center(child: Text("Iniciar Viaje")),
+                        ),
+                      )
+                    : FractionallySizedBox(
+                        widthFactor: 0.6,
+                        child: ElevatedButton(
+                          onPressed: _payForJourney,
+                          child: Center(
+                            child: Column(
+                              children: [
+                                Text("Pagar Pasaje"),
+                                Text("Escanear QR"),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
               )
             : const SizedBox(width: 1),
       ]),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          mapController.animateCamera(CameraUpdate.newLatLng(_currentLocation));
+        onPressed: () async {
+          // Check if the app has location permissions
+          final bool locationPermissionGranted =
+              await _checkLocationPermission();
+
+          if (!locationPermissionGranted) {
+            // Request location permissions
+            await _requestLocationPermission();
+          }
+
+          // Check if the location service is enabled on the phone
+          final bool locationServiceEnabled =
+              await Geolocator.isLocationServiceEnabled();
+          if (!locationServiceEnabled) {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text('Servicios de ubicación desactivados'),
+                  content: Text(
+                      'Por favor, active los servicios de ubicación en la configuración de su dispositivo para utilizar esta función.'),
+                  actions: <Widget>[
+                    TextButton(
+                      child: Text('Cerrar'),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+                );
+              },
+            );
+          } else {
+            // Get the current position to update _currentLocation
+            final Position position = await Geolocator.getCurrentPosition();
+            setState(() {
+              _currentLocation = LatLng(position.latitude, position.longitude);
+            });
+
+            // Update the map to the current location
+            mapController
+                .animateCamera(CameraUpdate.newLatLng(_currentLocation));
+          }
         },
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30.0),
@@ -451,6 +511,41 @@ class _MapScreenState extends PlacesAutocompleteState {
         child: const Icon(Icons.my_location),
       ),
     );
+  }
+
+  Future<List<BusLine>> fetchBusLines() async {
+    return await BusLineService.getBusLines();
+  }
+
+  void _showProximityNotification() async {
+    // const int notificationId = 0;
+
+    // // Customize the notification content
+    // final String title = '¡Prepárate para bajarte!';
+    // final String body = 'Estás cerca de tu parada. Asegúrate de estar listo.';
+
+    // // Display the notification
+    // await flutterLocalNotificationsPlugin.show(
+    //   notificationId,
+    //   title,
+    //   body,
+    //   platformChannelSpecifics,
+    // );
+  }
+
+  Future<bool> _checkLocationPermission() async {
+    final locationStatus = await Geolocator.checkPermission();
+    return locationStatus == LocationPermission.always ||
+        locationStatus == LocationPermission.whileInUse;
+  }
+
+  Future<void> _requestLocationPermission() async {
+    final locationStatus = await Geolocator.requestPermission();
+    if (locationStatus != LocationPermission.always &&
+        locationStatus != LocationPermission.whileInUse) {
+      // Handle the case where the user denies location permissions
+      // You may want to show a message or take appropriate action
+    }
   }
 
   void _routeSwipeRight() {
@@ -594,8 +689,8 @@ class _MapScreenState extends PlacesAutocompleteState {
             width: 5,
             points: stepPolylinePoints,
             patterns: [
-              PatternItem.dash(10),
-              PatternItem.gap(10)
+              PatternItem.dash(5),
+              PatternItem.gap(5)
             ], // Dotted pattern
           );
         } else if (step['travel_mode'] == 'TRANSIT') {
@@ -638,21 +733,52 @@ class _MapScreenState extends PlacesAutocompleteState {
       }
     }
 
+    for (var info in routePreviewInfo) {
+      if (info['type'] != 'walking') {
+        // Iterate through each bus line in busLineList
+        for (var busLine in busLinesList) {
+          if (busLine.oldCode == info['short_name']) {
+            // Update the short_name and color properties
+            info['short_name'] = busLine.code;
+            info['color'] = busLine.color;
+          }
+        }
+      }
+    }
+
+    final Map<String, Map<String, String>> codeMapping = {};
+    for (var busLine in busLinesList) {
+      codeMapping[busLine.oldCode] = {
+        'newCode': busLine.code,
+        'alias': busLine.alias ?? "",
+      };
+    }
+
+// Initialize routeInfo
     List<String> routeInfo = [];
+
+// Iterate through the steps in the route
     for (var leg in route['legs']) {
       for (var step in leg['steps']) {
         String instruction = step['html_instructions'];
 
-        // Optionally: Strip HTML tags
+        // Remove HTML tags
         instruction = instruction.replaceAll(RegExp('<[^>]+>'), '');
 
-        // Check if this step is a transit step and has line information
         if (step['travel_mode'] == 'TRANSIT' &&
             step.containsKey('transit_details')) {
-          String? lineName = step['transit_details']['line']['short_name'] ??
-              step['transit_details']['line']['name'];
-          if (lineName != null) {
-            instruction += " (vía $lineName)";
+          final transitDetails = step['transit_details'];
+          final lineName = transitDetails['line']['short_name'] ??
+              transitDetails['line']['name'];
+          final codeMappingData = codeMapping[lineName];
+
+          if (codeMappingData != null) {
+            final newCode = codeMappingData['newCode'];
+            final alias = codeMappingData['alias'];
+            final lineInfo = (alias != null)
+                ? ' (vía $newCode - $alias)'
+                : ' (vía $newCode)';
+            instruction += lineInfo;
           }
         }
 
