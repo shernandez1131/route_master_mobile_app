@@ -140,12 +140,14 @@ class _QRScannerPageState extends State<QRScannerPage> {
         ticket.amount = 0.0;
         ticket.fares = tempTicket.fares;
         // Navigate to the next screen
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => TicketInfoScreen(ticket: ticket),
-          ),
-        );
+        if (context.mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TicketInfoScreen(ticket: ticket),
+            ),
+          );
+        }
       } else {
         _showAlertDialog(
           context,
@@ -155,11 +157,13 @@ class _QRScannerPageState extends State<QRScannerPage> {
       }
     } catch (e) {
       // Error handling (e.g., invalid JSON data)
-      _showAlertDialog(
-        context,
-        "Error",
-        "Ocurrió un error al procesar el código QR: $e",
-      );
+      if (context.mounted) {
+        _showAlertDialog(
+          context,
+          "Error",
+          "Ocurrió un error al procesar el código QR: $e",
+        );
+      }
     }
   }
 

@@ -9,7 +9,6 @@ import 'package:google_api_headers/google_api_headers.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:route_master_mobile_app/models/models.dart';
 import 'package:route_master_mobile_app/screens/qr_scanner.dart';
-import 'package:route_master_mobile_app/services/directions_service.dart';
 import 'package:uuid/uuid.dart';
 import '../constants.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -20,7 +19,7 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
 // Initialize the notification details
-final AndroidNotificationDetails androidPlatformChannelSpecifics =
+const AndroidNotificationDetails androidPlatformChannelSpecifics =
     AndroidNotificationDetails(
   'routemaster_channel_id',
   'RouteMaster',
@@ -29,7 +28,7 @@ final AndroidNotificationDetails androidPlatformChannelSpecifics =
 );
 
 final DirectionsService directionsService = DirectionsService(kGoogleApiKey);
-final NotificationDetails platformChannelSpecifics =
+const NotificationDetails platformChannelSpecifics =
     NotificationDetails(android: androidPlatformChannelSpecifics);
 
 class MapScreen extends PlacesAutocompleteWidget {
@@ -102,7 +101,7 @@ class _MapScreenState extends PlacesAutocompleteState {
           _currentLocation = LatLng(position.latitude, position.longitude);
         });
         // Check proximity to stops
-        final double proximityThreshold = 50.0; // Adjust this value as needed
+        const double proximityThreshold = 50.0; // Adjust this value as needed
 
         for (LatLng stopLocation in finalStopsList) {
           double distanceToStop =
@@ -428,14 +427,14 @@ class _MapScreenState extends PlacesAutocompleteState {
                         widthFactor: 0.6,
                         child: ElevatedButton(
                           onPressed: _startJourney,
-                          child: Center(child: Text("Iniciar Viaje")),
+                          child: const Center(child: Text("Iniciar Viaje")),
                         ),
                       )
                     : FractionallySizedBox(
                         widthFactor: 0.6,
                         child: ElevatedButton(
                           onPressed: _payForJourney,
-                          child: Center(
+                          child: const Center(
                             child: Column(
                               children: [
                                 Text("Pagar Pasaje"),
@@ -462,17 +461,17 @@ class _MapScreenState extends PlacesAutocompleteState {
           // Check if the location service is enabled on the phone
           final bool locationServiceEnabled =
               await Geolocator.isLocationServiceEnabled();
-          if (!locationServiceEnabled) {
+          if (!locationServiceEnabled && context.mounted) {
             showDialog(
               context: context,
               builder: (BuildContext context) {
                 return AlertDialog(
-                  title: Text('Servicios de ubicación desactivados'),
-                  content: Text(
+                  title: const Text('Servicios de ubicación desactivados'),
+                  content: const Text(
                       'Por favor, active los servicios de ubicación en la configuración de su dispositivo para utilizar esta función.'),
                   actions: <Widget>[
                     TextButton(
-                      child: Text('Cerrar'),
+                      child: const Text('Cerrar'),
                       onPressed: () {
                         Navigator.of(context).pop();
                       },
