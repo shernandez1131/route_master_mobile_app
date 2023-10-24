@@ -241,18 +241,11 @@ class _MapScreenState extends PlacesAutocompleteState {
                                 child: Focus(
                                   focusNode: searchBoxStartingPointFocusNode,
                                   child: AppBarPlacesAutoCompleteTextField(
-                                      textDecoration: InputDecoration(
-                                        hintText:
-                                            '¿Cuál es tu punto de partida?',
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(32),
-                                        ),
-                                        filled: true, // Fill the background
-                                        fillColor: Colors.white,
-                                      ),
+                                      textDecoration: null,
                                       textStyle: null,
-                                      cursorColor: null),
+                                      cursorColor: null,
+                                      isFocused: searchBoxStartingPointFocusNode
+                                          .hasFocus),
                                 ),
                               )
                             : const SizedBox.shrink(),
@@ -262,16 +255,11 @@ class _MapScreenState extends PlacesAutocompleteState {
                         ? Focus(
                             focusNode: searchBoxFocusNode,
                             child: AppBarPlacesAutoCompleteTextFieldAlt(
-                                textDecoration: InputDecoration(
-                                  hintText: '¿Cuál es tu punto de llegada?',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(32),
-                                  ),
-                                  filled: true, // Fill the background
-                                  fillColor: Colors.white,
-                                ),
-                                textStyle: null,
-                                cursorColor: null))
+                              textDecoration: null,
+                              textStyle: null,
+                              cursorColor: null,
+                              isFocused: searchBoxFocusNode.hasFocus,
+                            ))
                         : const SizedBox.shrink(),
                   ],
                 ),

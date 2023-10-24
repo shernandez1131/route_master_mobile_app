@@ -52,24 +52,47 @@ class _LinesScreenState extends State<LinesScreen> {
             void filterBusLines(String query) {
               setState(() {
                 query = removeDiacritics(query).toLowerCase();
-                displayedBusLines = snapshot.data!
-                    .where((line) =>
-                        removeDiacritics(line.code)
-                            .toLowerCase()
-                            .contains(query) ||
-                        removeDiacritics(line.firstStop)
-                            .toLowerCase()
-                            .contains(query) ||
-                        removeDiacritics(line.lastStop)
-                            .toLowerCase()
-                            .contains(query) ||
-                        removeDiacritics(line.company!.name)
-                            .toLowerCase()
-                            .contains(query) ||
-                        removeDiacritics(line.alias ?? '')
-                            .toLowerCase()
-                            .contains(query))
-                    .toList();
+                if (query.length < 3) {
+                  displayedBusLines = snapshot.data!
+                      .where((line) =>
+                          removeDiacritics(line.code)
+                              .toLowerCase()
+                              .contains(query) ||
+                          removeDiacritics(line.firstStop)
+                              .toLowerCase()
+                              .contains(query) ||
+                          removeDiacritics(line.lastStop)
+                              .toLowerCase()
+                              .contains(query) ||
+                          removeDiacritics(line.company!.name)
+                              .toLowerCase()
+                              .contains(query) ||
+                          removeDiacritics(line.alias ?? '')
+                              .toLowerCase()
+                              .contains(query))
+                      .toList();
+                } else {
+                  displayedBusLines = snapshot.data!
+                      .where((line) =>
+                          removeDiacritics(line.code)
+                              .toLowerCase()
+                              .startsWith(query) ||
+                          removeDiacritics(line.firstStop)
+                              .toLowerCase()
+                              .split(' ')
+                              .any((element) => element.startsWith(query)) ||
+                          removeDiacritics(line.lastStop)
+                              .toLowerCase()
+                              .split(' ')
+                              .any((element) => element.startsWith(query)) ||
+                          removeDiacritics(line.company!.name)
+                              .toLowerCase()
+                              .contains(query) ||
+                          removeDiacritics(line.alias ?? '')
+                              .toLowerCase()
+                              .contains(query))
+                      .toList();
+                }
               });
             }
 
@@ -81,31 +104,43 @@ class _LinesScreenState extends State<LinesScreen> {
               return Column(
                 children: [
                   Padding(
-                      padding: const EdgeInsets.only(
-                          right: 16.0, left: 16.0, bottom: 8),
+                    padding: const EdgeInsets.all(16),
+                    child: Material(
+                      elevation: 4.0,
+                      borderRadius: BorderRadius.circular(30.0),
                       child: TextField(
                         controller: _controller,
                         onChanged: (value) {
                           filterBusLines(value);
                         },
                         decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
                           hintText: 'Busca una línea de bus',
-                          border: InputBorder.none,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30.0),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14.0, horizontal: 0.0),
                           prefixIcon: const Icon(Icons.search),
                           suffixIcon: _controller.text.isNotEmpty
                               ? IconButton(
                                   icon: const Icon(Icons.close),
                                   onPressed: () {
-                                    _controller.clear();
-                                    filterBusLines('');
-                                    FocusManager.instance.primaryFocus
-                                        ?.unfocus();
-                                    setState(() {});
+                                    setState(() {
+                                      _controller.clear();
+                                      filterBusLines('');
+                                      FocusManager.instance.primaryFocus
+                                          ?.unfocus();
+                                    });
                                   },
                                 )
                               : null,
                         ),
-                      )),
+                      ),
+                    ),
+                  ),
                   Expanded(
                     child: RefreshIndicator(
                       onRefresh: refreshBusLines,

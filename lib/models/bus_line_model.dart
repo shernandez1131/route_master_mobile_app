@@ -11,7 +11,7 @@ class BusLine {
   final int companyId;
   final VehicleType? vehicleType;
   final int vehicleTypeId;
-  final String? oldCode;
+  final String oldCode;
   final String? logo;
 
   BusLine({
@@ -25,7 +25,7 @@ class BusLine {
     required this.companyId,
     this.vehicleType,
     required this.vehicleTypeId,
-    this.oldCode,
+    required this.oldCode,
     this.logo,
   });
 
