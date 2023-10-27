@@ -235,7 +235,7 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: e860efbce54fa8b3297d2dfd0e3f76a8b50a54ff
+      resolved-ref: c585785793c240433a06b9bd8daba95859eceb31
       url: "https://github.com/shernandez1131/flutter_google_places_custom.git"
     source: git
     version: "2.0.0-beta.0"

@@ -169,7 +169,7 @@ class _MapScreenState extends PlacesAutocompleteState {
             markers: markers,
             polylines: polylines.keys.toSet(),
             onTap: (LatLng tappedPoint) {
-              const threshold = 1.0; // Adjust this value based on your needs
+              const threshold = 0.2; // Adjust this value based on your needs
               double? closestDistance;
               Map<dynamic, dynamic>? closestStep;
 
@@ -647,18 +647,6 @@ class _MapScreenState extends PlacesAutocompleteState {
   void _displayRoute(dynamic route) {
     polylines.clear();
 
-    List<Color> busColors = [
-      Colors.green,
-      Colors.deepPurple.shade600,
-      Colors.orange.shade800,
-      Colors.purpleAccent,
-      Colors.teal.shade900,
-      Colors.brown,
-      Colors.cyan.shade600
-    ];
-
-    int currentBusColorIndex = 0;
-
     for (var leg in route['legs']) {
       for (var step in leg['steps']) {
         // Decode the polyline for this step
@@ -681,15 +669,25 @@ class _MapScreenState extends PlacesAutocompleteState {
             ], // Dotted pattern
           );
         } else if (step['travel_mode'] == 'TRANSIT') {
+          String busLineColor = "#0000FF"; // Default color (blue)
+
+          for (var busLine in busLinesList) {
+            if (busLine.oldCode ==
+                step['transit_details']['line']['short_name']) {
+              busLineColor = busLine.color;
+            }
+          }
+
+          Color lineColor =
+              Color(int.parse("0xFF${busLineColor.replaceFirst('#', '')}"));
+
           polyline = Polyline(
             polylineId: PolylineId('step${step['start_location']}'),
-            color: busColors[currentBusColorIndex %
-                busColors
-                    .length], // Use modulo to loop back to the start if there are more buses than colors
+            color:
+                lineColor, // Use modulo to loop back to the start if there are more buses than colors
             width: 5,
             points: stepPolylinePoints,
           );
-          currentBusColorIndex++; // Move to the next color for the next bus
         }
 
         if (polyline != null) {

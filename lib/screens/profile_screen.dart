@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:route_master_mobile_app/screens/tickets_history_screen.dart';
 import '../models/models.dart';
 import '../widgets/widgets.dart';
 import '../services/services.dart';
@@ -127,24 +128,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              IconButton(
-                                icon: const Icon(Icons.history),
-                                onPressed: () {
-                                  // Navigate to the TransactionHistoryScreen when the history icon is pressed
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const TransactionHistoryScreen(),
+                              Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.receipt),
+                                      onPressed: () {
+                                        // Navigate to the TransactionHistoryScreen when the history icon is pressed
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const TicketsHistoryScreen(),
+                                          ),
+                                        );
+                                      },
                                     ),
-                                  );
-                                },
-                              ),
-                              Text(
-                                'Saldo: S/${passenger.wallet!.balance.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                    IconButton(
+                                      icon: const Icon(Icons.history),
+                                      onPressed: () {
+                                        // Navigate to the TransactionHistoryScreen when the history icon is pressed
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const TransactionHistoryScreen(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ]),
+                              Column(
+                                children: [
+                                  Text(
+                                    'Saldo:',
+                                    style: const TextStyle(fontSize: 20),
+                                  ),
+                                  Text(
+                                    'S/${passenger.wallet!.balance.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontSize: 25,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                ],
                               ),
                               IconButton(
                                 icon: const Icon(Icons.add),

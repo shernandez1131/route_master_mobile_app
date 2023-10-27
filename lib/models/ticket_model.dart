@@ -2,6 +2,7 @@ class Ticket {
   final String companyName;
   final String busName;
   final int number;
+  final DateTime createdOn;
   late Map<String, String> fares; // For various fare types and their prices
   double? amount; // Nullable, as it might not be available initially
   late int userId;
@@ -12,6 +13,7 @@ class Ticket {
     required this.fares,
     required this.number,
     required this.userId,
+    required this.createdOn,
     this.amount,
   });
 
@@ -24,6 +26,9 @@ class Ticket {
           json['fares'] != null ? Map<String, String>.from(json['fares']) : {},
       number: json['number'] ?? 0,
       userId: json['userId'] ?? 0,
+      createdOn: json['createdOn'] != null
+          ? DateTime.parse(json['createdOn'])
+          : DateTime(1970, 1, 1, 0, 0),
       // amount is not from QR code, will be added later
     );
   }

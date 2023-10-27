@@ -18,6 +18,9 @@ class QRScannerPage extends StatefulWidget {
 class _QRScannerPageState extends State<QRScannerPage> {
   QRViewController? controller;
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
+  bool canScan = true;
+  String? lastScanData;
+  DateTime? lastScanTime;
 
   @override
   void initState() {
@@ -118,7 +121,18 @@ class _QRScannerPageState extends State<QRScannerPage> {
   void _onQRViewCreated(QRViewController controller) {
     this.controller = controller;
     controller.scannedDataStream.listen((scanData) {
-      Navigator.pop(context, scanData.code);
+      if (canScan) {
+        if (lastScanData == scanData.code &&
+            lastScanTime != null &&
+            DateTime.now().difference(lastScanTime!) <
+                const Duration(seconds: 10)) {
+          // Ignore repeated scans of the same code within 5 seconds
+          return;
+        }
+        lastScanData = scanData.code;
+        lastScanTime = DateTime.now();
+        _handleQRCode(context, scanData.code ?? "");
+      }
     });
   }
 
@@ -135,18 +149,49 @@ class _QRScannerPageState extends State<QRScannerPage> {
         // Create a Ticket instance
         Ticket tempTicket = Ticket.fromJson(decodedData);
         tempTicket.userId = (await UserService.getUserId())!;
-        var ticket = await TicketService.postTicket(
-            tempTicket, (await UserService.getToken())!);
-        ticket.amount = 0.0;
-        ticket.fares = tempTicket.fares;
-        // Navigate to the next screen
-        if (context.mounted) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TicketInfoScreen(ticket: ticket),
-            ),
-          );
+
+        // Show the confirmation dialog
+        bool? confirmTicket = await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text("Confirmación"),
+              content: Text(
+                "¿Estás seguro de generar un boleto para el bus ${tempTicket.busName} de la empresa ${tempTicket.companyName}?",
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(true); // Accept button
+                  },
+                  child: const Text('Aceptar'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(false); // Cancel button
+                  },
+                  child: const Text('Cancelar'),
+                ),
+              ],
+            );
+          },
+        );
+
+        // If the user confirms the ticket, create and navigate to the TicketInfoScreen
+        if (confirmTicket == true) {
+          var ticket = await TicketService.postTicket(
+              tempTicket, (await UserService.getToken())!);
+          ticket.amount = 0.0;
+          ticket.fares = tempTicket.fares;
+
+          if (context.mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TicketInfoScreen(ticket: ticket),
+              ),
+            );
+          }
         }
       } else {
         _showAlertDialog(
@@ -161,7 +206,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
         _showAlertDialog(
           context,
           "Error",
-          "Ocurrió un error al procesar el código QR: $e",
+          "El código QR es inválido, intente de nuevo.",
         );
       }
     }
