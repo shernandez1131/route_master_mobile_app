@@ -188,7 +188,10 @@ class _QRScannerPageState extends State<QRScannerPage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => TicketInfoScreen(ticket: ticket),
+                builder: (context) => TicketInfoScreen(
+                  ticket: ticket,
+                  isFromQrScan: true,
+                ),
               ),
             );
           }

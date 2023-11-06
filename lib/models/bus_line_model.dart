@@ -37,9 +37,12 @@ class BusLine {
       lastStop: json['lastStop'],
       alias: json['alias'],
       color: json['color'],
-      company: Company.fromJson(json['company']),
+      company:
+          json['company'] != null ? Company.fromJson(json['company']) : null,
       companyId: json['companyId'],
-      vehicleType: VehicleType.fromJson(json['vehicleType']),
+      vehicleType: json['vehicleType'] != null
+          ? VehicleType.fromJson(json['vehicleType'])
+          : null,
       vehicleTypeId: json['vehicleTypeId'],
       oldCode: json['oldCode'],
       logo: json['logo'],

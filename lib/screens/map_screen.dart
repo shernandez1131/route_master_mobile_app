@@ -9,6 +9,7 @@ import 'package:google_api_headers/google_api_headers.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:route_master_mobile_app/models/models.dart';
 import 'package:route_master_mobile_app/screens/qr_scanner.dart';
+import 'package:route_master_mobile_app/services/trip_service.dart';
 import 'package:uuid/uuid.dart';
 import '../constants.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -66,6 +67,10 @@ class _MapScreenState extends PlacesAutocompleteState {
   dynamic currentRoute;
   late List<LatLng> finalStopsList = [];
   late List<BusLine> busLinesList = [];
+  late List<BusStop> busStopsList = [];
+  late List<TripDetail> currentRouteBusDetails = [];
+  late Map<String, Map<String, dynamic>> codeMapping = {};
+  var allPolylines = [];
 
   @override
   void initState() {
@@ -87,11 +92,6 @@ class _MapScreenState extends PlacesAutocompleteState {
     _determinePosition().then((value) {
       _currentLocation = LatLng(value.latitude, value.longitude);
       mapController.animateCamera(CameraUpdate.newLatLng(_currentLocation));
-      fetchBusLines().then((data) {
-        setState(() {
-          busLinesList = data;
-        });
-      });
     });
     positionStream =
         Geolocator.getPositionStream(locationSettings: locationSettings)
@@ -114,6 +114,25 @@ class _MapScreenState extends PlacesAutocompleteState {
         }
       }
     });
+    fetchBusLines().then((data) {
+      fetchBusStops().then((response) {
+        setState(() {
+          busStopsList = response;
+          busLinesList = data;
+
+          // Populate codeMapping with additional properties from busLinesList
+          for (var busLine in busLinesList) {
+            codeMapping[busLine.oldCode] = {
+              'newCode': busLine.code,
+              'alias': busLine.alias ?? "",
+              'color': busLine.color,
+              'lineId': busLine.lineId,
+            };
+          }
+        });
+      });
+    });
+
     super.initState();
   }
 
@@ -220,88 +239,104 @@ class _MapScreenState extends PlacesAutocompleteState {
                 bottomRight: Radius.circular(24),
               ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Column(
-                  children: [
-                    Row(
-                      children: [
-                        (!searchBoxFocusNode.hasFocus &&
-                                !searchBoxStartingPointFocusNode.hasFocus)
-                            ? const SizedBox.shrink()
-                            : const SizedBox.shrink(),
-                        (!searchBoxFocusNode.hasFocus &&
-                                !searchBoxStartingPointFocusNode.hasFocus)
-                            ? const SizedBox(width: 0)
-                            : const SizedBox(width: 0),
-                        !searchBoxFocusNode.hasFocus
-                            ? Expanded(
-                                child: Focus(
-                                  focusNode: searchBoxStartingPointFocusNode,
-                                  child: AppBarPlacesAutoCompleteTextField(
-                                      textDecoration: null,
-                                      textStyle: null,
-                                      cursorColor: null,
-                                      isFocused: searchBoxStartingPointFocusNode
-                                          .hasFocus),
+            child: !isJourneyStarted
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Column(
+                        children: [
+                          Row(
+                            children: [
+                              (!searchBoxFocusNode.hasFocus &&
+                                      !searchBoxStartingPointFocusNode.hasFocus)
+                                  ? const SizedBox.shrink()
+                                  : const SizedBox.shrink(),
+                              (!searchBoxFocusNode.hasFocus &&
+                                      !searchBoxStartingPointFocusNode.hasFocus)
+                                  ? const SizedBox(width: 0)
+                                  : const SizedBox(width: 0),
+                              !searchBoxFocusNode.hasFocus
+                                  ? Expanded(
+                                      child: Focus(
+                                        focusNode:
+                                            searchBoxStartingPointFocusNode,
+                                        child: AppBarPlacesAutoCompleteTextField(
+                                            textDecoration: null,
+                                            textStyle: null,
+                                            cursorColor: null,
+                                            isFocused:
+                                                searchBoxStartingPointFocusNode
+                                                    .hasFocus),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ],
+                          ),
+                          (!searchBoxStartingPointFocusNode.hasFocus)
+                              ? Focus(
+                                  focusNode: searchBoxFocusNode,
+                                  child: AppBarPlacesAutoCompleteTextFieldAlt(
+                                    textDecoration: null,
+                                    textStyle: null,
+                                    cursorColor: null,
+                                    isFocused: searchBoxFocusNode.hasFocus,
+                                  ))
+                              : const SizedBox.shrink(),
+                        ],
+                      ),
+                      (searchBoxStartingPointFocusNode.hasFocus)
+                          ? Expanded(
+                              child: Container(
+                                color: Colors.white.withOpacity(0.7),
+                                height: 100, // White background
+                                child: PlacesAutocompleteResult(
+                                  onTap: (prediction) {
+                                    displayPrediction(prediction, 'start');
+                                  },
+                                  logo: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [FlutterLogo()],
+                                  ),
+                                  resultTextStyle:
+                                      Theme.of(context).textTheme.titleMedium,
                                 ),
-                              )
-                            : const SizedBox.shrink(),
-                      ],
+                              ),
+                            )
+                          : const SizedBox(width: 1),
+                      (searchBoxFocusNode.hasFocus)
+                          ? Expanded(
+                              child: Container(
+                                color: Colors.white.withOpacity(0.7),
+                                height: 100, // White background
+                                child: PlacesAutocompleteResultAlt(
+                                  onTap: (prediction) {
+                                    displayPrediction(prediction, 'finish');
+                                  },
+                                  logo: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [FlutterLogo()],
+                                  ),
+                                  resultTextStyle:
+                                      Theme.of(context).textTheme.titleMedium,
+                                ),
+                              ),
+                            )
+                          : const SizedBox(width: 1)
+                    ],
+                  )
+                : FractionallySizedBox(
+                    widthFactor: 1,
+                    child: ElevatedButton(
+                      onPressed: _finishJourney,
+                      style: ButtonStyle(
+                        backgroundColor:
+                            MaterialStateProperty.all<Color>(Colors.red),
+                        foregroundColor:
+                            MaterialStateProperty.all<Color>(Colors.white),
+                      ),
+                      child: Text("Finalizar Viaje"),
                     ),
-                    (!searchBoxStartingPointFocusNode.hasFocus)
-                        ? Focus(
-                            focusNode: searchBoxFocusNode,
-                            child: AppBarPlacesAutoCompleteTextFieldAlt(
-                              textDecoration: null,
-                              textStyle: null,
-                              cursorColor: null,
-                              isFocused: searchBoxFocusNode.hasFocus,
-                            ))
-                        : const SizedBox.shrink(),
-                  ],
-                ),
-                (searchBoxStartingPointFocusNode.hasFocus)
-                    ? Expanded(
-                        child: Container(
-                          color: Colors.white.withOpacity(0.7),
-                          height: 100, // White background
-                          child: PlacesAutocompleteResult(
-                            onTap: (prediction) {
-                              displayPrediction(prediction, 'start');
-                            },
-                            logo: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [FlutterLogo()],
-                            ),
-                            resultTextStyle:
-                                Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ),
-                      )
-                    : const SizedBox(width: 1),
-                (searchBoxFocusNode.hasFocus)
-                    ? Expanded(
-                        child: Container(
-                          color: Colors.white.withOpacity(0.7),
-                          height: 100, // White background
-                          child: PlacesAutocompleteResultAlt(
-                            onTap: (prediction) {
-                              displayPrediction(prediction, 'finish');
-                            },
-                            logo: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [FlutterLogo()],
-                            ),
-                            resultTextStyle:
-                                Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ),
-                      )
-                    : const SizedBox(width: 1)
-              ],
-            ),
+                  ),
           ),
         ),
         (_allRoutes.isNotEmpty &&
@@ -338,61 +373,105 @@ class _MapScreenState extends PlacesAutocompleteState {
                             : const SizedBox(width: 1),
                         Flexible(
                           child: !isJourneyStarted
-                              ? SingleChildScrollView(
-                                  scrollDirection: Axis
-                                      .horizontal, // Allow horizontal scrolling
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: routePreviewInfo
-                                        .asMap()
-                                        .entries
-                                        .expand((entry) {
-                                      int idx = entry.key;
-                                      var info = entry.value;
-                                      List<Widget> widgets = [];
+                              ? Column(
+                                  children: [
+                                    Text(
+                                        "${_currentRouteIndex + 1}/${_allRoutes.length}"),
+                                    SingleChildScrollView(
+                                        scrollDirection: Axis
+                                            .horizontal, // Allow horizontal scrolling
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: routePreviewInfo
+                                              .asMap()
+                                              .entries
+                                              .expand((entry) {
+                                            int idx = entry.key;
+                                            var info = entry.value;
+                                            List<Widget> widgets = [];
 
-                                      // If not the first element, prepend an arrow
-                                      if (idx != 0) {
-                                        widgets.add(const SizedBox(width: 4));
-                                        widgets.add(const Icon(
-                                            Icons.arrow_forward_ios,
-                                            size: 12.0,
-                                            color: Colors.grey)); // Arrow icon
-                                        widgets.add(const SizedBox(
-                                            width: 4)); // Provide some spacing
-                                      }
+                                            // If not the first element, prepend an arrow
+                                            if (idx != 0) {
+                                              widgets.add(
+                                                  const SizedBox(width: 8));
+                                              widgets.add(const Icon(
+                                                  Icons.arrow_forward_ios,
+                                                  size: 12.0,
+                                                  color: Colors
+                                                      .grey)); // Arrow icon
+                                              widgets.add(const SizedBox(
+                                                  width:
+                                                      6)); // Provide some spacing
+                                            }
 
-                                      // Then add the actual icon or label
-                                      if (info['type'] == 'walking') {
-                                        widgets.add(Column(
-                                          children: [
-                                            const Icon(Icons.directions_walk),
-                                            Text(info['duration'])
-                                          ],
-                                        ));
-                                      } else {
-                                        widgets.add(Column(
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.all(4),
-                                              decoration: BoxDecoration(
-                                                  color: Color(getColorFromHex(
-                                                      info['color'])),
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          10)),
-                                              child: Text(info['short_name'],
-                                                  style: const TextStyle(
-                                                      color: Colors.white)),
-                                            ),
-                                            Text(info['duration'])
-                                          ],
-                                        ));
-                                      }
+                                            // Then add the actual icon or label
+                                            if (info['type'] == 'walking') {
+                                              widgets.add(Column(
+                                                children: [
+                                                  const Icon(
+                                                      Icons.directions_walk),
+                                                  Text(info['duration'])
+                                                ],
+                                              ));
+                                            } else {
+                                              widgets.add(Column(
+                                                children: [
+                                                  Container(
+                                                    decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              5),
+                                                      border: Border.all(
+                                                        color: Colors.grey
+                                                            .withOpacity(0.5),
+                                                        width: 1,
+                                                      ),
+                                                      color: Colors.white,
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: Color(
+                                                              getColorFromHex(
+                                                                  info[
+                                                                      'color'])),
+                                                          spreadRadius: 0,
+                                                          blurRadius: 0,
+                                                          offset: const Offset(
+                                                              5, 0),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    child: Padding(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                        horizontal: 4.0,
+                                                        vertical: 2.0,
+                                                      ),
+                                                      child: Row(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          Text(
+                                                            info['short_name'],
+                                                            style:
+                                                                const TextStyle(
+                                                                    fontSize:
+                                                                        15),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Text(info['duration'])
+                                                ],
+                                              ));
+                                            }
 
-                                      return widgets;
-                                    }).toList(),
-                                  ))
+                                            return widgets;
+                                          }).toList(),
+                                        )),
+                                  ],
+                                )
                               : Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -504,6 +583,10 @@ class _MapScreenState extends PlacesAutocompleteState {
     return await BusLineService.getBusLines();
   }
 
+  Future<List<BusStop>> fetchBusStops() async {
+    return await BusStopService.getBusStops();
+  }
+
   void _showProximityNotification() async {
     // const int notificationId = 0;
 
@@ -542,7 +625,7 @@ class _MapScreenState extends PlacesAutocompleteState {
       _currentRouteIndex = _allRoutes.length - 1;
     }
     currentRoute = _allRoutes[_currentRouteIndex];
-    _displayRoute(_allRoutes[_currentRouteIndex]);
+    _displayRoute(currentRoute);
   }
 
   void _routeSwipeLeft() {
@@ -552,10 +635,10 @@ class _MapScreenState extends PlacesAutocompleteState {
       _currentRouteIndex = 0;
     }
     currentRoute = _allRoutes[_currentRouteIndex];
-    _displayRoute(_allRoutes[_currentRouteIndex]);
+    _displayRoute(currentRoute);
   }
 
-  void _startJourney() {
+  Future<void> _startJourney() async {
     var startMarker = markers
         .where((marker) => marker.markerId.value == 'startMarker')
         .firstOrNull;
@@ -588,6 +671,48 @@ class _MapScreenState extends PlacesAutocompleteState {
       }
     }
 
+    int userId = (await UserService.getUserId())!;
+    String token = (await UserService.getToken())!;
+    Trip tempTrip = Trip(
+        startDate: DateTime.now(),
+        endDate: DateTime.fromMicrosecondsSinceEpoch(0),
+        userId: userId,
+        totalPrice: 0);
+    Trip newTrip = await TripService.postTrip(tempTrip, token);
+    while (busStopsList.isEmpty) {
+      await Future.delayed(Duration(milliseconds: 300));
+    }
+    // Create a Map using the coordinates as keys for quick access
+    Map<String, BusStop> busStopCoordinatesMap = {};
+    // Populate the Map
+    for (var busStop in busStopsList) {
+      busStopCoordinatesMap['${busStop.latitude},${busStop.longitude}'] =
+          busStop;
+    }
+    // Update currentRouteBusDetails
+    for (var currentBus in currentRouteBusDetails) {
+      List<String> startCoordinates = currentBus.startCoordinates.split(',');
+      List<String> finishCoordinates = currentBus.finalCoordinates.split(',');
+
+      // Get BusStop objects directly from the Map using coordinates as keys
+      BusStop? originBusStop = busStopCoordinatesMap[
+          '${startCoordinates[0]},${startCoordinates[1]}'];
+      BusStop? destinationBusStop = busStopCoordinatesMap[
+          '${finishCoordinates[0]},${finishCoordinates[1]}'];
+      currentBus.tripId = newTrip.tripId!;
+
+      // Check if BusStop objects exist for the coordinates
+      if (originBusStop != null) {
+        currentBus.originStopId = originBusStop.busStopId;
+      }
+
+      if (destinationBusStop != null) {
+        currentBus.destinationStopId = destinationBusStop.busStopId;
+      }
+
+      currentBus = await TripService.postTripDetail(currentBus, token);
+    }
+
     setState(() {});
   }
 
@@ -602,6 +727,11 @@ class _MapScreenState extends PlacesAutocompleteState {
       // Process the scanned QR code
       debugPrint('Scanned QR Code: $scannedQRCode');
     }
+  }
+
+  void _finishJourney() async {
+    isJourneyStarted = false;
+    setState(() {});
   }
 
   int getColorFromHex(String hexColor) {
@@ -619,9 +749,53 @@ class _MapScreenState extends PlacesAutocompleteState {
         origin: origin,
         destination: destination,
       );
+      allPolylines = [];
 
       if (directions != null && directions['routes'] != null) {
         List<dynamic> routes = directions['routes'];
+
+        routes.removeWhere((route) {
+          final steps = route['legs'][0]['steps'];
+          final polylines = steps
+              .map((step) => step['polyline']['points'])
+              .toList(); // Extract polylines
+          bool validPolylines = true;
+          bool similarPolylines = arePolylinesSimilar(polylines);
+
+          if (allPolylines.isEmpty || !similarPolylines) {
+            allPolylines.add(polylines);
+            validPolylines = true;
+          } else if (similarPolylines) {
+            validPolylines = false;
+          }
+
+          final hasInvalidStep = steps.any((step) {
+            if (step['travel_mode'] == 'TRANSIT' &&
+                step.containsKey('transit_details') &&
+                step['transit_details'].containsKey('line')) {
+              final line = step['transit_details']['line'];
+              final shortName =
+                  (line.containsKey('short_name') ? line['short_name'] : '')
+                      .replaceAll('-', '')
+                      .toLowerCase();
+              final alias = line.containsKey('alias')
+                  ? line['alias'].toLowerCase()
+                  : line.containsKey('name')
+                      ? line['name'].toLowerCase()
+                      : '';
+
+              // Check if the short_name and alias match the oldCode and alias in codeMapping
+              return !codeMapping.keys.any((key) {
+                final newKey = key.toLowerCase();
+                final mappingAlias = codeMapping[key]!['alias'].toLowerCase();
+                return newKey == shortName || mappingAlias == alias;
+              });
+            }
+            return false;
+          });
+
+          return hasInvalidStep || !validPolylines;
+        });
 
         // Sort routes based on travel time
         routes.sort((a, b) {
@@ -642,6 +816,29 @@ class _MapScreenState extends PlacesAutocompleteState {
       // Handle errors
       debugPrint(e.toString());
     }
+  }
+
+  bool arePolylinesSimilar(List<dynamic> polyline1) {
+    for (var polyline2 in allPolylines) {
+      bool similar = true;
+      for (int i = 0; i < polyline1.length; i++) {
+        if (polyline1[i] != polyline2[i]) {
+          similar = false;
+          break;
+        }
+      }
+      if (similar) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  String roundCoordinates(dynamic value) {
+    double fixedValue =
+        double.parse(double.parse(value.toString()).toStringAsFixed(7));
+    String stringValue = fixedValue.toString();
+    return stringValue;
   }
 
   void _displayRoute(dynamic route) {
@@ -669,22 +866,28 @@ class _MapScreenState extends PlacesAutocompleteState {
             ], // Dotted pattern
           );
         } else if (step['travel_mode'] == 'TRANSIT') {
-          String busLineColor = "#0000FF"; // Default color (blue)
+          String busLineColor = "#0000FF";
+          var stepLine = step['transit_details']['line'];
+          final match = codeMapping.entries.firstWhere((entry) {
+            final newKey = entry.key.toLowerCase();
+            final mappingAlias = entry.value['alias'].toString().toLowerCase();
+            return newKey ==
+                    stepLine['short_name']
+                        .toString()
+                        .replaceAll('-', '')
+                        .toLowerCase() ||
+                mappingAlias == stepLine['name'].toString().toLowerCase() ||
+                mappingAlias == stepLine['alias'].toString().toLowerCase();
+          });
 
-          for (var busLine in busLinesList) {
-            if (busLine.oldCode ==
-                step['transit_details']['line']['short_name']) {
-              busLineColor = busLine.color;
-            }
-          }
+          busLineColor = match.value['color'];
 
           Color lineColor =
               Color(int.parse("0xFF${busLineColor.replaceFirst('#', '')}"));
 
           polyline = Polyline(
             polylineId: PolylineId('step${step['start_location']}'),
-            color:
-                lineColor, // Use modulo to loop back to the start if there are more buses than colors
+            color: lineColor,
             width: 5,
             points: stepPolylinePoints,
           );
@@ -707,36 +910,61 @@ class _MapScreenState extends PlacesAutocompleteState {
             'duration': step['duration']['text'],
           });
         } else if (step['travel_mode'] == 'TRANSIT') {
+          String busName = step['transit_details']['line']['short_name'] ??
+              step['transit_details']['line']['alias'] ??
+              step['transit_details']['line']['name'] ??
+              '0000';
+
+          // Extracting and rounding coordinates
+          String startCoordinates =
+              '${roundCoordinates(step['start_location']["lat"])},${roundCoordinates(step['start_location']["lng"])}';
+          String endCoordinates =
+              '${roundCoordinates(step['end_location']["lat"])},${roundCoordinates(step['end_location']["lng"])}';
+
           routePreviewInfo.add({
             'type': 'transit',
             'duration': step['duration']['text'],
-            'short_name':
-                step['transit_details']['line']['short_name'] ?? '0000',
+            'start_coordinates': startCoordinates,
+            'end_coordinates': endCoordinates,
+            'short_name': busName.replaceAll('-', ''),
             'color': step['transit_details']['line']['color'],
           });
         }
       }
     }
 
+    currentRouteBusDetails = [];
+    int orderCount = 0;
+
     for (var info in routePreviewInfo) {
       if (info['type'] != 'walking') {
-        // Iterate through each bus line in busLineList
-        for (var busLine in busLinesList) {
-          if (busLine.oldCode == info['short_name']) {
-            // Update the short_name and color properties
-            info['short_name'] = busLine.code;
-            info['color'] = busLine.color;
-          }
-        }
-      }
-    }
+        final match = codeMapping.entries.firstWhere((entry) {
+          final newKey = entry.key.toLowerCase();
+          final mappingAlias = entry.value['alias'].toString().toLowerCase();
+          return newKey == info['short_name'].toString().toLowerCase() ||
+              mappingAlias == info['short_name'].toString().toLowerCase();
+        });
 
-    final Map<String, Map<String, String>> codeMapping = {};
-    for (var busLine in busLinesList) {
-      codeMapping[busLine.oldCode] = {
-        'newCode': busLine.code,
-        'alias': busLine.alias ?? "",
-      };
+        TripDetail tempTripDetail = TripDetail(
+          tripId: 0,
+          tripDetailId: 0,
+          startCoordinates: info['start_coordinates'],
+          finalCoordinates: info['end_coordinates'],
+          vehicleTypeId: 1,
+          lineId: match.value['lineId'],
+          originStopId: 0,
+          destinationStopId: 0,
+          order: orderCount,
+          price: 0,
+        );
+        // Update the short_name and color properties
+        info['short_name'] = match.value['newCode'].length > 1
+            ? match.value['newCode']
+            : match.value['alias'];
+        info['color'] = match.value['color'];
+        orderCount++;
+        currentRouteBusDetails.add(tempTripDetail);
+      }
     }
 
 // Initialize routeInfo
@@ -752,19 +980,21 @@ class _MapScreenState extends PlacesAutocompleteState {
 
         if (step['travel_mode'] == 'TRANSIT' &&
             step.containsKey('transit_details')) {
-          final transitDetails = step['transit_details'];
-          final lineName = transitDetails['line']['short_name'] ??
-              transitDetails['line']['name'];
-          final codeMappingData = codeMapping[lineName];
+          final transitDetails = step['transit_details']['line'];
+          final match = codeMapping.entries.firstWhere((entry) {
+            final newKey = entry.key.toLowerCase();
+            final mappingAlias = entry.value['alias'].toString().toLowerCase();
+            return newKey ==
+                    transitDetails['short_name'].toString().toLowerCase() ||
+                mappingAlias ==
+                    transitDetails['short_name'].toString().toLowerCase();
+          });
 
-          if (codeMappingData != null) {
-            final newCode = codeMappingData['newCode'];
-            final alias = codeMappingData['alias'];
-            final lineInfo = (alias != null)
-                ? ' (vía $newCode - $alias)'
-                : ' (vía $newCode)';
-            instruction += lineInfo;
-          }
+          final newCode = match.value['newCode'];
+          final alias = match.value['alias'];
+          final lineInfo =
+              (alias != "") ? ' (vía $newCode - $alias)' : ' (vía $newCode)';
+          instruction += lineInfo;
         }
 
         routeInfo.add("${step['duration']['text']} - $instruction");
@@ -912,9 +1142,6 @@ class _MapScreenState extends PlacesAutocompleteState {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: Text("${time.hour}:${time.minute}"),
-                  // child: Divider(
-                  //   child: Text("${time.hour}:${time.minute}"),
-                  // ),
                 );
               }).toList(),
               const SizedBox(height: 10),

@@ -3,8 +3,10 @@ import 'package:route_master_mobile_app/models/ticket_model.dart';
 
 class TicketInfoScreen extends StatelessWidget {
   final Ticket ticket;
+  final bool isFromQrScan;
 
-  const TicketInfoScreen({super.key, required this.ticket});
+  const TicketInfoScreen(
+      {super.key, required this.ticket, required this.isFromQrScan});
 
   @override
   Widget build(BuildContext context) {

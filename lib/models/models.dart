@@ -9,3 +9,5 @@ export 'bus_stop_model.dart';
 export 'company_model.dart';
 export 'vehicle_type_model.dart';
 export 'ticket_model.dart';
+export 'trip_detail_model.dart';
+export 'trip_model.dart';

@@ -5,3 +5,4 @@ export 'wallet_service.dart';
 export 'directions_service.dart';
 export 'tickets_service.dart';
 export 'bus_line_service.dart';
+export 'bus_stop_service.dart';
