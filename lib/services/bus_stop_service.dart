@@ -34,4 +34,24 @@ class BusStopService {
       throw Exception('Failed to load bus stops');
     }
   }
+
+  static Future<List<BusStop>> getBusStopsByUserId(busLineId) async {
+    final url = Uri.parse('$kDeployedUrl/api/BusStops/$busLineId/busline');
+    final token = await UserService.getToken();
+
+    final response = await http.get(
+      url,
+      headers: <String, String>{
+        HttpHeaders.acceptHeader: 'application/json',
+        'Content-Type': 'application/json; charset=UTF-8',
+        HttpHeaders.authorizationHeader: 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return compute(parseBusStops, response.body);
+    } else {
+      throw Exception('Failed to load bus stops');
+    }
+  }
 }

@@ -4,8 +4,10 @@ import 'package:diacritic/diacritic.dart';
 import 'package:flutter/material.dart';
 import 'package:grouped_list/grouped_list.dart';
 import 'package:route_master_mobile_app/extensions.dart';
+import 'package:route_master_mobile_app/screens/bus_route_screen.dart';
 import 'package:route_master_mobile_app/services/bus_line_service.dart';
 import '../models/models.dart';
+import '../services/services.dart';
 
 class LinesScreen extends StatefulWidget {
   const LinesScreen({super.key});
@@ -203,68 +205,73 @@ class _LinesScreenState extends State<LinesScreen> {
                           ),
                         ),
                         itemBuilder: (context, Map<String, dynamic> element) {
-                          return ListTile(
-                            title: Row(
-                              children: [
-                                element['logo'] == ""
-                                    ? Container(
-                                        decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(5),
-                                            border: Border.all(
-                                              color:
-                                                  Colors.grey.withOpacity(0.5),
-                                              width: 1,
+                          return GestureDetector(
+                              onTap: () {
+                                _openBusStopsMap(element['lineId']);
+                              },
+                              child: ListTile(
+                                title: Row(
+                                  children: [
+                                    element['logo'] == ""
+                                        ? Container(
+                                            decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
+                                                border: Border.all(
+                                                  color: Colors.grey
+                                                      .withOpacity(0.5),
+                                                  width: 1,
+                                                ),
+                                                color: Colors.white,
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: element['color'],
+                                                    spreadRadius: 0,
+                                                    blurRadius: 0,
+                                                    offset: const Offset(5, 0),
+                                                  ),
+                                                ]),
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(
+                                                  left: 4.0,
+                                                  right: 4.0,
+                                                  top: 2.0,
+                                                  bottom: 2.0),
+                                              child: Row(
+                                                children: [
+                                                  const Icon(
+                                                      Icons.directions_bus),
+                                                  Text(
+                                                    element['code'],
+                                                    style: const TextStyle(
+                                                        fontSize: 15),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                            color: Colors.white,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: element['color'],
-                                                spreadRadius: 0,
-                                                blurRadius: 0,
-                                                offset: const Offset(5, 0),
-                                              ),
-                                            ]),
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(
-                                              left: 4.0,
-                                              right: 4.0,
-                                              top: 2.0,
-                                              bottom: 2.0),
-                                          child: Row(
-                                            children: [
-                                              const Icon(Icons.directions_bus),
-                                              Text(
-                                                element['code'],
-                                                style: const TextStyle(
-                                                    fontSize: 15),
-                                              ),
-                                            ],
+                                          )
+                                        : Image.memory(
+                                            base64Decode(element['logo']),
+                                            width: 36,
+                                            height: 36,
+                                            scale: 1.5,
                                           ),
-                                        ),
-                                      )
-                                    : Image.memory(
-                                        base64Decode(element['logo']),
-                                        width: 36,
-                                        height: 36,
-                                        scale: 1.5,
-                                      ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Text(element['alias'] == null
-                                      ? element['firstStop'] +
-                                          ' - ' +
-                                          element['lastStop']
-                                      : element['firstStop'] +
-                                          ' - ' +
-                                          element['lastStop'] +
-                                          ' [' +
-                                          element['alias']! +
-                                          ']'),
-                                )
-                              ],
-                            ),
-                          );
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Text(element['alias'] == null
+                                          ? element['firstStop'] +
+                                              ' - ' +
+                                              element['lastStop']
+                                          : element['firstStop'] +
+                                              ' - ' +
+                                              element['lastStop'] +
+                                              ' [' +
+                                              element['alias']! +
+                                              ']'),
+                                    )
+                                  ],
+                                ),
+                              ));
                         },
                       ),
                     ),
@@ -278,5 +285,18 @@ class _LinesScreenState extends State<LinesScreen> {
             }
           }),
     );
+  }
+
+  void _openBusStopsMap(id) async {
+    fetchBusStopsByBusLineId(id).then((value) => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BusRouteScreen(busStops: value),
+          ),
+        ));
+  }
+
+  Future<List<BusStop>> fetchBusStopsByBusLineId(id) async {
+    return await BusStopService.getBusStopsByUserId(id);
   }
 }
