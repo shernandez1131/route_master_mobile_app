@@ -132,4 +132,11 @@ class UserService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('google_sign_in');
   }
+
+  static Future<void> removeAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.remove('jwt_token');
+    prefs.remove('user_id');
+    prefs.remove('google_sign_in');
+  }
 }

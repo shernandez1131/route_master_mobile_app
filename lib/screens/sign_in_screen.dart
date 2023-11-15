@@ -123,6 +123,28 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    //check if shared preferences has token and userid
+    setState(() {
+      isLoading = true;
+    });
+    UserService.getToken().then((token) {
+      if (token != null) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          (route) => false,
+        );
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Iniciar Sesión')),

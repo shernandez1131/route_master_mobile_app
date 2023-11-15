@@ -183,6 +183,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                               isGoogleSignIn) {
                                             await GoogleSignIn().disconnect();
                                           }
+                                          await UserService.removeAll();
                                           if (context.mounted) {
                                             Navigator.of(context)
                                                 .pushAndRemoveUntil(
