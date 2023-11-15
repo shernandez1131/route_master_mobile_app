@@ -95,7 +95,8 @@ class _MapScreenState extends PlacesAutocompleteState {
 
           if (distanceToStop <= proximityThreshold) {
             // User is close to a stop; show a notification
-            _showProximityNotification();
+            //_showProximityNotification();
+            print("Estas cerca de tu paradero");
           }
         }
       }
