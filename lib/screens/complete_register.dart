@@ -95,7 +95,7 @@ class _CompleteRegisterViewState extends State<CompleteRegisterView> {
                     final wallet = Wallet(
                       walletId: 0,
                       userId: widget.user.userId!,
-                      balance: 0,
+                      balance: "0.00",
                       lastUpdate: DateTime.now(),
                     );
                     FocusManager.instance.primaryFocus?.unfocus();

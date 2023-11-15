@@ -16,21 +16,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../services/services.dart';
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
-
-// Initialize the notification details
-const AndroidNotificationDetails androidPlatformChannelSpecifics =
-    AndroidNotificationDetails(
-  'routemaster_channel_id',
-  'RouteMaster',
-  importance: Importance.max,
-  priority: Priority.high,
-);
-
 final DirectionsService directionsService = DirectionsService(kGoogleApiKey);
-const NotificationDetails platformChannelSpecifics =
-    NotificationDetails(android: androidPlatformChannelSpecifics);
 
 class MapScreen extends PlacesAutocompleteWidget {
   MapScreen({Key? key})
@@ -588,19 +574,10 @@ class _MapScreenState extends PlacesAutocompleteState {
   }
 
   void _showProximityNotification() async {
-    // const int notificationId = 0;
-
-    // // Customize the notification content
-    // final String title = '¡Prepárate para bajarte!';
-    // final String body = 'Estás cerca de tu parada. Asegúrate de estar listo.';
-
-    // // Display the notification
-    // await flutterLocalNotificationsPlugin.show(
-    //   notificationId,
-    //   title,
-    //   body,
-    //   platformChannelSpecifics,
-    // );
+    NotificationService.showNotification(
+      '¡Prepárate para bajar!',
+      'Estás cerca de tu parada. Asegúrate de estar listo.',
+    );
   }
 
   Future<bool> _checkLocationPermission() async {

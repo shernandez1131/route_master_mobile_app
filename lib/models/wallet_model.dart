@@ -1,7 +1,7 @@
 class Wallet {
   int walletId;
   int userId;
-  double balance;
+  String balance;
   DateTime lastUpdate;
 
   Wallet({
@@ -15,7 +15,7 @@ class Wallet {
     return Wallet(
       walletId: json['walletId'] as int,
       userId: json['userId'] as int,
-      balance: json['balance'] as double,
+      balance: json['balance'],
       lastUpdate: DateTime.parse(json['lastUpdate'] as String),
     );
   }

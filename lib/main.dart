@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:route_master_mobile_app/services/services.dart';
 import 'screens/sign_in_screen.dart';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -22,18 +25,13 @@ class MyApp extends StatelessWidget {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Permission.notification.request();
+  NotificationService.initialize();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  // HttpOverrides.global = MyHttpOverrides();
+  Stripe.publishableKey =
+      "pk_test_51OBC14Ew7UVJPn6sOgy4NuGhfrAD1hQRXBVBmM40zVS5mUD7rya6C01UzPoJ4U7k8631M19d93jhwJYOponutdHx00VxznzOOa";
+  await Stripe.instance.applySettings();
   runApp(const MyApp());
 }
-
-// class MyHttpOverrides extends HttpOverrides {
-//   @override
-//   HttpClient createHttpClient(SecurityContext? context) {
-//     return super.createHttpClient(context)
-//       ..badCertificateCallback =
-//           (X509Certificate cert, String host, int port) => true;
-//   }
-// }

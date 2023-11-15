@@ -1,10 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:route_master_mobile_app/models/models.dart';
 import 'package:route_master_mobile_app/screens/tickets_history_screen.dart';
-import '../models/models.dart';
-import '../widgets/widgets.dart';
-import '../services/services.dart';
+import 'package:route_master_mobile_app/services/services.dart';
+import 'package:route_master_mobile_app/widgets/widgets.dart';
 import 'screens.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_stripe/flutter_stripe.dart' as st;
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -17,15 +21,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   late Future<Passenger?> passengerFuture;
+  late Passenger _passenger;
   bool isReadOnly = true;
   bool firstLoad = true;
   bool isUpdating = false;
+  bool isPaymentPanelVisible = false;
 
   late TextEditingController firstNameController;
   late TextEditingController lastNameController;
   late TextEditingController lastName2Controller;
   late TextEditingController phoneNumberController;
   late TextEditingController paymentMethodController;
+  late double rechargeAmount;
+  late String passengerBalance;
+  Map<String, dynamic>? paymentIntent;
 
   @override
   void initState() {
@@ -82,6 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         return const Text('Error loading data'); // Handle error
                       } else {
                         final passenger = snapshot.data!;
+                        _passenger = snapshot.data!;
 
                         if (firstLoad) {
                           firstNameController =
@@ -94,6 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               text: passenger.phoneNumber);
                           paymentMethodController = TextEditingController(
                               text: passenger.paymentMethodId.toString());
+                          passengerBalance = _passenger.wallet!.balance;
                           firstLoad = false;
                         }
 
@@ -129,26 +140,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                     fontSize: 20),
                                               ),
                                               Text(
-                                                'S/${passenger.wallet!.balance.toStringAsFixed(2)}',
+                                                'S/${double.parse(passengerBalance).toStringAsFixed(2)}',
                                                 style: const TextStyle(
                                                   fontSize: 25,
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               )
                                             ],
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(Icons.add),
-                                            onPressed: () {
-                                              // Navigate to the AddFundsScreen when the add icon is pressed
-                                              Navigator.of(context).push(
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      const AddFundsScreen(),
-                                                ),
-                                              );
-                                            },
-                                          ),
+                                          )
                                         ],
                                       ),
                                       ProfileField(
@@ -298,9 +297,148 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ));
               },
             ),
+            ListTile(
+              leading: Icon(Icons.add), // Icon for Transaction History
+              title: Text('Recargar Monedero'),
+              onTap: () {
+                _scaffoldKey.currentState?.closeDrawer();
+                _showRecargarDialog();
+              },
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showRecargarDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        TextEditingController _amountController = TextEditingController();
+        return AlertDialog(
+          title: Text('Recargar Monedero'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('¿Cuál monto desea recargar en su monedero?'),
+              SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('S/. ', style: TextStyle(fontSize: 20)),
+                  SizedBox(
+                    width: 150,
+                    child: TextField(
+                      controller: _amountController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d*\.?\d{0,2}$'),
+                        ),
+                      ],
+                      decoration: InputDecoration(
+                        hintText: 'Monto',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                // Add logic to handle the recharge action
+                String amountText = _amountController.text.trim();
+                if (amountText.isNotEmpty) {
+                  rechargeAmount = double.parse(amountText);
+                  // Validate and use the 'amount' value
+                  print('Recargar $rechargeAmount PEN');
+                }
+                setState(() {
+                  isPaymentPanelVisible = true;
+                });
+                Navigator.of(context).pop(); // Close the dialog
+                makePayment();
+              },
+              child: Text('Recargar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void makePayment() async {
+    try {
+      paymentIntent = await createPaymentIntent();
+      var gpay = const st.PaymentSheetGooglePay(
+          merchantCountryCode: "ES", currencyCode: "ES", testEnv: true);
+      await st.Stripe.instance
+          .initPaymentSheet(
+            paymentSheetParameters: st.SetupPaymentSheetParameters(
+                customFlow: true,
+                paymentIntentClientSecret: paymentIntent!["client_secret"],
+                style: ThemeMode.light,
+                merchantDisplayName: "RouteMaster",
+                googlePay: gpay,
+                primaryButtonLabel: "Pagar S/. ${(rechargeAmount).toString()}"),
+          )
+          .then((value) => displayPaymentSheet());
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  void displayPaymentSheet() async {
+    try {
+      await st.Stripe.instance.presentPaymentSheet();
+      await st.Stripe.instance.confirmPaymentSheetPayment();
+      double existingBalance = double.parse(passengerBalance);
+      double newBalance = existingBalance + rechargeAmount;
+      Wallet wallet = Wallet(
+          walletId: _passenger.wallet!.walletId,
+          userId: _passenger.wallet!.userId,
+          balance: newBalance.toString(),
+          lastUpdate: DateTime.now());
+      var token = await UserService.getToken();
+      await WalletService.putWallet(wallet, token!)
+          .then((value) => setState(() {
+                passengerBalance = value.balance;
+                _showRechargeConfirmation();
+              }));
+      print("Payment sheet displayed successfully");
+    } catch (e) {
+      throw Exception("Error displaying payment sheet: $e");
+    }
+  }
+
+  createPaymentIntent() async {
+    try {
+      Map<String, dynamic> body = {
+        "amount": (rechargeAmount * 100).round().toString(),
+        "currency": "usd",
+      };
+      http.Response response = await http.post(
+          Uri.parse("https://api.stripe.com/v1/payment_intents"),
+          body: body,
+          headers: {
+            "Authorization":
+                "Bearer sk_test_51OBC14Ew7UVJPn6si1ymYg76Pnin479ybVJaLCbzJ0qOT1zte6zTXXTWxlPXGx3DFbyH8G45za6PJhHVkOHbVMXi00umsm9NJP",
+            "Content-Type": "application/x-www-form-urlencoded",
+          });
+      return json.decode(response.body);
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  void _showRechargeConfirmation() async {
+    // Display the notification
+    NotificationService.showNotification(
+      'Recarga confirmada',
+      'Su recarga de S/. ${rechargeAmount.toStringAsFixed(2)} ha sido confirmada',
     );
   }
 }
