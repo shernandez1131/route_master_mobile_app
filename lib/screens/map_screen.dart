@@ -87,7 +87,7 @@ class _MapScreenState extends PlacesAutocompleteState {
           _currentLocation = LatLng(position.latitude, position.longitude);
         });
         // Check proximity to stops
-        const double proximityThreshold = 50.0; // Adjust this value as needed
+        const double proximityThreshold = 0.5; // Adjust this value as needed
 
         for (LatLng stopLocation in finalStopsList) {
           double distanceToStop =
