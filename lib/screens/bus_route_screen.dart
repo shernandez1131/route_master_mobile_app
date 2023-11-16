@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:route_master_mobile_app/models/bus_line_model.dart';
 import 'package:route_master_mobile_app/models/bus_stop_model.dart';
+import 'package:route_master_mobile_app/services/bus_line_service.dart';
 
 class BusRouteScreen extends StatefulWidget {
   final List<BusStop> busStops;
@@ -15,6 +17,7 @@ class _BusRouteScreenState extends State<BusRouteScreen> {
   GoogleMapController? _mapController;
   Set<Marker> _markers = {};
   BitmapDescriptor? busIcon;
+  List<BusLine> busLines = [];
 
   @override
   void initState() {
@@ -41,9 +44,41 @@ class _BusRouteScreenState extends State<BusRouteScreen> {
           position: LatLng(busStop.latitude, busStop.longitude),
           icon: BitmapDescriptor.defaultMarker,
           infoWindow: InfoWindow(title: busStop.name),
-          onTap: () {
-            print('Clicked ${busStop.name}');
+          onTap: () async {
+            print('StopId: ${busStop.busStopId}. Clicked ${busStop.name}');
             // Handle marker tap: show bus stop details, navigate, etc.
+            busLines =
+                await BusLineService.getBusLinesByStopId(busStop.busStopId);
+
+            //Show a dialog with the bus lines
+            if (context.mounted) {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: Text('Líneas de bus'),
+                    content: Container(
+                      width: double.maxFinite,
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: busLines.length,
+                        itemBuilder: (context, index) {
+                          return ListTile(title: Text(busLines[index].code));
+                        },
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: Text('OK'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            }
           },
         );
       }).toSet();

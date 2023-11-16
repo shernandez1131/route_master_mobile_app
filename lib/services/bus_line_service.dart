@@ -34,4 +34,24 @@ class BusLineService {
       throw Exception('Failed to load bus lines');
     }
   }
+
+  static Future<List<BusLine>> getBusLinesByStopId(int stopId) async {
+    final url = Uri.parse('$kDeployedUrl/api/buslines/stop/$stopId');
+    final token = await UserService.getToken();
+
+    final response = await http.get(
+      url,
+      headers: <String, String>{
+        HttpHeaders.acceptHeader: 'application/json',
+        'Content-Type': 'application/json; charset=UTF-8',
+        HttpHeaders.authorizationHeader: 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return compute(parseBusLines, response.body);
+    } else {
+      throw Exception('Failed to load bus lines');
+    }
+  }
 }
