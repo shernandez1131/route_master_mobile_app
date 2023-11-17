@@ -199,6 +199,14 @@ class _BusRouteScreenState extends State<BusRouteScreen> {
                   ),
                 )
               : const SizedBox.shrink(),
+          Positioned(
+            top: 35,
+            left: 15,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
         ],
       ),
     );

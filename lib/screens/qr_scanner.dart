@@ -9,7 +9,10 @@ import 'package:scan/scan.dart';
 import 'dart:convert';
 
 class QRScannerPage extends StatefulWidget {
-  const QRScannerPage({super.key});
+  final List<String> allowedBusesList;
+  final Function(dynamic) callback;
+  const QRScannerPage(
+      {super.key, required this.allowedBusesList, required this.callback});
 
   @override
   State<QRScannerPage> createState() => _QRScannerPageState();
@@ -62,6 +65,14 @@ class _QRScannerPageState extends State<QRScannerPage> {
             ),
           ),
           Positioned(
+            top: 60,
+            left: MediaQuery.of(context).size.width * 0.09,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          Positioned(
             bottom: 200.0,
             left: MediaQuery.of(context).size.width * 0.29,
             child: Row(
@@ -91,9 +102,10 @@ class _QRScannerPageState extends State<QRScannerPage> {
                             context: context,
                             builder: (BuildContext context) {
                               return AlertDialog(
-                                title: const Text('No QR Code Found'),
+                                title:
+                                    const Text('No se encontró un código QR'),
                                 content: const Text(
-                                    'The selected image does not contain a QR code.'),
+                                    'La imagen seleccionada no contiene un código QR.'),
                                 actions: <Widget>[
                                   TextButton(
                                     onPressed: () {
@@ -145,7 +157,8 @@ class _QRScannerPageState extends State<QRScannerPage> {
       if (decodedData.containsKey('companyName') &&
           decodedData.containsKey('busName') &&
           decodedData.containsKey('fares') &&
-          decodedData['fares'] is Map) {
+          decodedData['fares'] is Map &&
+          widget.allowedBusesList.contains(decodedData['busName'])) {
         // Create a Ticket instance
         Ticket tempTicket = Ticket.fromJson(decodedData);
         tempTicket.userId = (await UserService.getUserId())!;
@@ -191,6 +204,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
                 builder: (context) => TicketInfoScreen(
                   ticket: ticket,
                   isFromQrScan: true,
+                  callback: widget.callback,
                 ),
               ),
             );
@@ -200,7 +214,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
         _showAlertDialog(
           context,
           "Código QR inválido",
-          "El código QR no contiene la información necesaria.",
+          "El código QR no contiene la información necesaria o no es de un bus para tu actual ruta.",
         );
       }
     } catch (e) {

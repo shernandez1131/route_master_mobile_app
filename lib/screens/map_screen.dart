@@ -12,8 +12,6 @@ import 'package:route_master_mobile_app/screens/qr_scanner.dart';
 import 'package:route_master_mobile_app/services/trip_service.dart';
 import 'package:uuid/uuid.dart';
 import '../constants.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
 import '../services/services.dart';
 
 final DirectionsService directionsService = DirectionsService(kGoogleApiKey);
@@ -34,7 +32,7 @@ class MapScreen extends PlacesAutocompleteWidget {
 
 class _MapScreenState extends PlacesAutocompleteState {
   late GoogleMapController mapController;
-  late LatLng _currentLocation;
+  late LatLng _currentLocation = const LatLng(-12.0461513, -77.0306332);
   Set<Marker> markers = {};
   Map<Polyline, dynamic> polylines = {};
   List<dynamic> _allRoutes = [];
@@ -42,21 +40,31 @@ class _MapScreenState extends PlacesAutocompleteState {
   List<Map<String, dynamic>> routePreviewInfo = [];
   int _currentRouteIndex = 0;
   bool isJourneyStarted = false;
+  int finalBusStopsNotified = 0;
+  double currentSpeed = 0.0;
+  double lastDistance = 0.0;
+  DateTime? lastTime;
   final LocationSettings locationSettings = const LocationSettings(
     accuracy: LocationAccuracy.high,
-    distanceFilter: 5,
+    distanceFilter: 1,
   );
   late StreamSubscription<Position> positionStream;
   final FocusNode searchBoxFocusNode = FocusNode();
   final FocusNode searchBoxStartingPointFocusNode = FocusNode();
   List<Prediction> predictions = [];
   dynamic currentRoute;
-  late List<LatLng> finalStopsList = [];
+  late List<FinalBusStop> finalStopsList = [];
   late List<BusLine> busLinesList = [];
   late List<BusStop> busStopsList = [];
   late List<TripDetail> currentRouteBusDetails = [];
+  late List<String> currentRouteBusNames = [];
   late Map<String, Map<String, dynamic>> codeMapping = {};
+  late Trip currentTrip;
   var allPolylines = [];
+  late FinalBusStop paidBusFinalStop;
+  late Passenger? currentPassenger;
+  bool isPaidTrip = false;
+  bool enableFinishJourneyBtn = false;
 
   @override
   void initState() {
@@ -74,7 +82,6 @@ class _MapScreenState extends PlacesAutocompleteState {
         setState(() {});
       }
     });
-    _currentLocation = const LatLng(-12.0461513, -77.0306332);
     _determinePosition().then((value) {
       _currentLocation = LatLng(value.latitude, value.longitude);
       mapController.animateCamera(CameraUpdate.newLatLng(_currentLocation));
@@ -83,20 +90,48 @@ class _MapScreenState extends PlacesAutocompleteState {
         Geolocator.getPositionStream(locationSettings: locationSettings)
             .listen((Position? position) {
       if (position != null) {
+        LatLng newLocation = LatLng(position.latitude, position.longitude);
+
+        double distance = _distanceBetween(_currentLocation, newLocation);
+        DateTime currentTime = DateTime.now();
+
+        // Calculate time elapsed since the last update
+        Duration timeDiff = lastTime != null
+            ? currentTime.difference(lastTime!)
+            : Duration.zero;
+
+        // Calculate speed if enough time has passed and distance is significant
+        if (timeDiff.inSeconds > 0 && distance - lastDistance > 0.001) {
+          currentSpeed = (distance - lastDistance) /
+              timeDiff.inSeconds; // Speed in meters per second
+        }
+
+        // Update values for the next iteration
+        lastDistance = distance;
+        lastTime = currentTime;
+        print(
+            "Speed: ${currentSpeed * 3600} km/s | ${currentSpeed * 1000} m/s");
         setState(() {
-          _currentLocation = LatLng(position.latitude, position.longitude);
+          _currentLocation = newLocation;
         });
         // Check proximity to stops
-        const double proximityThreshold = 0.5; // Adjust this value as needed
-
-        for (LatLng stopLocation in finalStopsList) {
+        const double proximityThreshold = 0.3; // Adjust this value as needed
+        for (var stopLocation in finalStopsList) {
           double distanceToStop =
-              _distanceBetween(_currentLocation, stopLocation);
+              _distanceBetween(_currentLocation, stopLocation.coordinates);
 
-          if (distanceToStop <= proximityThreshold) {
+          if (distanceToStop <= proximityThreshold &&
+              finalBusStopsNotified == stopLocation.order) {
             // User is close to a stop; show a notification
-            //_showProximityNotification();
-            print("Estas cerca de tu paradero");
+            _showProximityNotification();
+            finalBusStopsNotified += 1;
+          }
+        }
+        if (isPaidTrip) {
+          double distanceToStop =
+              _distanceBetween(_currentLocation, paidBusFinalStop.coordinates);
+          if (distanceToStop < 0.2) {
+            enableFinishJourneyBtn = true;
           }
         }
       }
@@ -218,113 +253,143 @@ class _MapScreenState extends PlacesAutocompleteState {
             }),
         SafeArea(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Colors.transparent, // Transparent background
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(
+                color: Colors.transparent, // Transparent background
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
+                ),
               ),
-            ),
-            child: !isJourneyStarted
-                ? Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Column(
-                        children: [
-                          Row(
-                            children: [
-                              (!searchBoxFocusNode.hasFocus &&
-                                      !searchBoxStartingPointFocusNode.hasFocus)
-                                  ? const SizedBox.shrink()
-                                  : const SizedBox.shrink(),
-                              (!searchBoxFocusNode.hasFocus &&
-                                      !searchBoxStartingPointFocusNode.hasFocus)
-                                  ? const SizedBox(width: 0)
-                                  : const SizedBox(width: 0),
-                              !searchBoxFocusNode.hasFocus
-                                  ? Expanded(
-                                      child: Focus(
-                                        focusNode:
-                                            searchBoxStartingPointFocusNode,
-                                        child: AppBarPlacesAutoCompleteTextField(
-                                            textDecoration: null,
-                                            textStyle: null,
-                                            cursorColor: null,
-                                            isFocused:
-                                                searchBoxStartingPointFocusNode
-                                                    .hasFocus),
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
-                            ],
-                          ),
-                          (!searchBoxStartingPointFocusNode.hasFocus)
-                              ? Focus(
-                                  focusNode: searchBoxFocusNode,
-                                  child: AppBarPlacesAutoCompleteTextFieldAlt(
-                                    textDecoration: null,
-                                    textStyle: null,
-                                    cursorColor: null,
-                                    isFocused: searchBoxFocusNode.hasFocus,
-                                  ))
-                              : const SizedBox.shrink(),
-                        ],
-                      ),
-                      (searchBoxStartingPointFocusNode.hasFocus)
-                          ? Expanded(
-                              child: Container(
-                                color: Colors.white.withOpacity(0.7),
-                                height: 100, // White background
-                                child: PlacesAutocompleteResult(
-                                  onTap: (prediction) {
-                                    displayPrediction(prediction, 'start');
-                                  },
-                                  logo: const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [FlutterLogo()],
+              child: !isJourneyStarted
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Column(
+                          children: [
+                            Row(
+                              children: [
+                                (!searchBoxFocusNode.hasFocus &&
+                                        !searchBoxStartingPointFocusNode
+                                            .hasFocus)
+                                    ? const SizedBox.shrink()
+                                    : const SizedBox.shrink(),
+                                (!searchBoxFocusNode.hasFocus &&
+                                        !searchBoxStartingPointFocusNode
+                                            .hasFocus)
+                                    ? const SizedBox(width: 0)
+                                    : const SizedBox(width: 0),
+                                !searchBoxFocusNode.hasFocus
+                                    ? Expanded(
+                                        child: Focus(
+                                          focusNode:
+                                              searchBoxStartingPointFocusNode,
+                                          child: AppBarPlacesAutoCompleteTextField(
+                                              textDecoration: null,
+                                              textStyle: null,
+                                              cursorColor: null,
+                                              isFocused:
+                                                  searchBoxStartingPointFocusNode
+                                                      .hasFocus),
+                                        ),
+                                      )
+                                    : const SizedBox.shrink(),
+                              ],
+                            ),
+                            (!searchBoxStartingPointFocusNode.hasFocus)
+                                ? Focus(
+                                    focusNode: searchBoxFocusNode,
+                                    child: AppBarPlacesAutoCompleteTextFieldAlt(
+                                      textDecoration: null,
+                                      textStyle: null,
+                                      cursorColor: null,
+                                      isFocused: searchBoxFocusNode.hasFocus,
+                                    ))
+                                : const SizedBox.shrink(),
+                          ],
+                        ),
+                        (searchBoxStartingPointFocusNode.hasFocus)
+                            ? Expanded(
+                                child: Container(
+                                  color: Colors.white.withOpacity(0.7),
+                                  height: 100, // White background
+                                  child: PlacesAutocompleteResult(
+                                    onTap: (prediction) {
+                                      displayPrediction(prediction, 'start');
+                                    },
+                                    logo: const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [FlutterLogo()],
+                                    ),
+                                    resultTextStyle:
+                                        Theme.of(context).textTheme.titleMedium,
                                   ),
-                                  resultTextStyle:
-                                      Theme.of(context).textTheme.titleMedium,
                                 ),
-                              ),
-                            )
-                          : const SizedBox(width: 1),
-                      (searchBoxFocusNode.hasFocus)
-                          ? Expanded(
-                              child: Container(
-                                color: Colors.white.withOpacity(0.7),
-                                height: 100, // White background
-                                child: PlacesAutocompleteResultAlt(
-                                  onTap: (prediction) {
-                                    displayPrediction(prediction, 'finish');
-                                  },
-                                  logo: const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [FlutterLogo()],
+                              )
+                            : const SizedBox(width: 1),
+                        (searchBoxFocusNode.hasFocus)
+                            ? Expanded(
+                                child: Container(
+                                  color: Colors.white.withOpacity(0.7),
+                                  height: 100, // White background
+                                  child: PlacesAutocompleteResultAlt(
+                                    onTap: (prediction) {
+                                      displayPrediction(prediction, 'finish');
+                                    },
+                                    logo: const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [FlutterLogo()],
+                                    ),
+                                    resultTextStyle:
+                                        Theme.of(context).textTheme.titleMedium,
                                   ),
-                                  resultTextStyle:
-                                      Theme.of(context).textTheme.titleMedium,
                                 ),
+                              )
+                            : const SizedBox(width: 1)
+                      ],
+                    )
+                  : FractionallySizedBox(
+                      widthFactor: 1,
+                      child: isPaidTrip
+                          ? ElevatedButton(
+                              onPressed: () {
+                                if (enableFinishJourneyBtn) {
+                                  _finishPaidJourney();
+                                }
+                              },
+                              style: ButtonStyle(
+                                backgroundColor:
+                                    MaterialStateProperty.all<Color>(
+                                  isPaidTrip && !enableFinishJourneyBtn
+                                      ? Colors.grey
+                                      : Colors.red,
+                                ),
+                                foregroundColor:
+                                    MaterialStateProperty.all<Color>(
+                                        Colors.white),
                               ),
+                              child: (paidBusFinalStop.order ==
+                                      finalStopsList.length - 1)
+                                  ? Text(
+                                      "Pagar Bus ${paidBusFinalStop.busLineName} y finalizar viaje")
+                                  : Text(
+                                      "Pagar Bus ${paidBusFinalStop.busLineName}"),
                             )
-                          : const SizedBox(width: 1)
-                    ],
-                  )
-                : FractionallySizedBox(
-                    widthFactor: 1,
-                    child: ElevatedButton(
-                      onPressed: _finishJourney,
-                      style: ButtonStyle(
-                        backgroundColor:
-                            MaterialStateProperty.all<Color>(Colors.red),
-                        foregroundColor:
-                            MaterialStateProperty.all<Color>(Colors.white),
-                      ),
-                      child: Text("Finalizar Viaje"),
-                    ),
-                  ),
-          ),
+                          : ElevatedButton(
+                              onPressed: _finishJourney,
+                              style: ButtonStyle(
+                                backgroundColor:
+                                    MaterialStateProperty.all<Color>(
+                                        Colors.red),
+                                foregroundColor:
+                                    MaterialStateProperty.all<Color>(
+                                        Colors.white),
+                              ),
+                              child: Text("Finalizar Viaje"),
+                            ),
+                    )),
         ),
         (_allRoutes.isNotEmpty &&
                 !searchBoxFocusNode.hasFocus &&
@@ -577,7 +642,7 @@ class _MapScreenState extends PlacesAutocompleteState {
   void _showProximityNotification() async {
     NotificationService.showNotification(
       '¡Prepárate para bajar!',
-      'Estás cerca de tu parada. Asegúrate de estar listo.',
+      'Estás cerca de tu parada. Asegúrate de estar listo y no olvides tus pertenencias.',
     );
   }
 
@@ -628,9 +693,11 @@ class _MapScreenState extends PlacesAutocompleteState {
 
     // Extract and populate finalStopsList with LatLng coordinates
     finalStopsList.clear(); // Clear the list to start fresh
+    finalBusStopsNotified = 0;
 
     if (currentRoute != null && currentRoute['legs'] != null) {
       for (var leg in currentRoute['legs']) {
+        int count = 0;
         for (var step in leg['steps']) {
           if (step['travel_mode'] == 'TRANSIT') {
             final transitDetails = step['transit_details'];
@@ -638,10 +705,30 @@ class _MapScreenState extends PlacesAutocompleteState {
               final arrivalStop = transitDetails['arrival_stop'];
               if (arrivalStop != null) {
                 final stopLocation = LatLng(
-                  arrivalStop['location']['lat'],
-                  arrivalStop['location']['lng'],
+                  double.parse(
+                      roundCoordinates(arrivalStop['location']['lat'])),
+                  double.parse(
+                      roundCoordinates(arrivalStop['location']['lng'])),
                 );
-                finalStopsList.add(stopLocation);
+                final stepLine = transitDetails['line'];
+                final match = codeMapping.entries.firstWhere((entry) {
+                  final newKey = entry.key.toLowerCase();
+                  final mappingAlias =
+                      entry.value['alias'].toString().toLowerCase();
+                  return newKey ==
+                          stepLine['short_name']
+                              .toString()
+                              .replaceAll('-', '')
+                              .toLowerCase() ||
+                      mappingAlias ==
+                          stepLine['name'].toString().toLowerCase() ||
+                      mappingAlias ==
+                          stepLine['alias'].toString().toLowerCase();
+                });
+                var tempFinalStop =
+                    FinalBusStop(count, stopLocation, match.value['newCode']);
+                finalStopsList.add(tempFinalStop);
+                count += 1;
               }
             }
           }
@@ -655,8 +742,8 @@ class _MapScreenState extends PlacesAutocompleteState {
         startDate: DateTime.now(),
         endDate: DateTime.fromMicrosecondsSinceEpoch(0),
         userId: userId,
-        totalPrice: 0);
-    Trip newTrip = await TripService.postTrip(tempTrip, token);
+        totalPrice: -1);
+    currentTrip = await TripService.postTrip(tempTrip, token);
     while (busStopsList.isEmpty) {
       await Future.delayed(Duration(milliseconds: 300));
     }
@@ -677,7 +764,7 @@ class _MapScreenState extends PlacesAutocompleteState {
           '${startCoordinates[0]},${startCoordinates[1]}'];
       BusStop? destinationBusStop = busStopCoordinatesMap[
           '${finishCoordinates[0]},${finishCoordinates[1]}'];
-      currentBus.tripId = newTrip.tripId!;
+      currentBus.tripId = currentTrip.tripId!;
 
       // Check if BusStop objects exist for the coordinates
       if (originBusStop != null) {
@@ -695,20 +782,47 @@ class _MapScreenState extends PlacesAutocompleteState {
   }
 
   void _payForJourney() async {
-    final scannedQRCode = await Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const QRScannerPage(),
+        builder: (context) => QRScannerPage(
+          allowedBusesList: currentRouteBusNames,
+          callback: (dynamic data) {
+            // Handle the received data from the second screen here
+            print('Data received in MapScreen from TicketInfoScreen: $data');
+            paidBusFinalStop =
+                finalStopsList.firstWhere((e) => e.busLineName == data.busName);
+            setState(() {
+              isPaidTrip = true;
+              enableFinishJourneyBtn = false;
+            });
+          },
+        ),
       ),
     );
-    if (scannedQRCode != null && scannedQRCode is String) {
-      // Process the scanned QR code
-      debugPrint('Scanned QR Code: $scannedQRCode');
-    }
   }
 
   void _finishJourney() async {
     isJourneyStarted = false;
+    var tripToUpdate = currentTrip;
+    tripToUpdate.endDate = DateTime.now();
+    String token = (await UserService.getToken())!;
+    currentTrip = await TripService.updateTrip(tripToUpdate, token);
+    setState(() {});
+  }
+
+  void _finishPaidJourney() async {
+    isPaidTrip = false;
+    //keep trip going but pay ticket/ add cost to trip
+    var tripToUpdate = currentTrip;
+    tripToUpdate.totalPrice = tripToUpdate.totalPrice + 1.5;
+    String token = (await UserService.getToken())!;
+    currentPassenger = await loadPassengerData();
+    double newPassengerBalance =
+        double.parse(currentPassenger!.wallet!.balance) - 1.5;
+    currentPassenger!.wallet!.balance = newPassengerBalance.toString();
+    currentTrip = await TripService.updateTrip(tripToUpdate, token);
+    await WalletService.putWallet(currentPassenger!.wallet!, token);
     setState(() {});
   }
 
@@ -728,7 +842,9 @@ class _MapScreenState extends PlacesAutocompleteState {
         destination: destination,
       );
       allPolylines = [];
-
+      setState(() {
+        polylines.clear();
+      });
       if (directions != null && directions['routes'] != null) {
         List<dynamic> routes = directions['routes'];
 
@@ -766,7 +882,10 @@ class _MapScreenState extends PlacesAutocompleteState {
               return !codeMapping.keys.any((key) {
                 final newKey = key.toLowerCase();
                 final mappingAlias = codeMapping[key]!['alias'].toLowerCase();
-                return newKey == shortName || mappingAlias == alias;
+                return newKey == shortName ||
+                    (mappingAlias != "" &&
+                        alias != "" &&
+                        mappingAlias == alias);
               });
             }
             return false;
@@ -913,6 +1032,7 @@ class _MapScreenState extends PlacesAutocompleteState {
 
     currentRouteBusDetails = [];
     int orderCount = 0;
+    currentRouteBusNames = [];
 
     for (var info in routePreviewInfo) {
       if (info['type'] != 'walking') {
@@ -941,6 +1061,7 @@ class _MapScreenState extends PlacesAutocompleteState {
             : match.value['alias'];
         info['color'] = match.value['color'];
         orderCount++;
+        currentRouteBusNames.add(info['short_name'].toString());
         currentRouteBusDetails.add(tempTripDetail);
       }
     }
@@ -1148,6 +1269,16 @@ class _MapScreenState extends PlacesAutocompleteState {
         );
       },
     );
+  }
+
+  Future<Passenger?> loadPassengerData() async {
+    final int? userId = await UserService.getUserId();
+    final String? token = await UserService.getToken();
+
+    if (userId != null && token != null) {
+      return PassengerService.getPassengerByUserId(userId, token);
+    }
+    return null;
   }
 
   double _distanceBetween(LatLng a, LatLng b) {

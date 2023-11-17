@@ -6,8 +6,8 @@ class Trip {
   final int? tripId;
   final int userId;
   final DateTime startDate;
-  final DateTime endDate;
-  final double totalPrice;
+  late DateTime endDate;
+  late double totalPrice;
   final List<TripDetail>? tripDetails;
 
   Trip({

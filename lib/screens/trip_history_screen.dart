@@ -93,12 +93,15 @@ class _TripHistoryScreenState extends State<TripHistoryScreen>
                     children: [
                       Text(
                           'Inicio: ${DateFormat('dd/MM/yyyy HH:mm').format(tabData[index].startDate)}'),
-                      Text(
-                          'Final: ${DateFormat('dd/MM/yyyy HH:mm').format(tabData[index].endDate)}'),
+                      (tabData[index].endDate !=
+                              DateTime.fromMicrosecondsSinceEpoch(0))
+                          ? Text(
+                              'Final: ${DateFormat('dd/MM/yyyy HH:mm').format(tabData[index].endDate)}')
+                          : const SizedBox.shrink(),
                     ],
                   ),
                   trailing: Text(
-                    tabData[index].totalPrice == 0
+                    tabData[index].totalPrice < 0
                         ? 'En curso'
                         : 'S/. ${tabData[index].totalPrice}',
                   ),

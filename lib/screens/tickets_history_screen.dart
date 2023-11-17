@@ -13,6 +13,7 @@ class TicketsHistoryScreen extends StatefulWidget {
 class _TicketsHistoryScreenState extends State<TicketsHistoryScreen>
     with SingleTickerProviderStateMixin {
   late List<Ticket> tabData = [];
+  late Function(dynamic) emptyCallback;
 
   @override
   void initState() {
@@ -47,6 +48,7 @@ class _TicketsHistoryScreenState extends State<TicketsHistoryScreen>
                   builder: (context) => TicketInfoScreen(
                     ticket: tabData[index],
                     isFromQrScan: false,
+                    callback: emptyCallback,
                   ),
                 ),
               );

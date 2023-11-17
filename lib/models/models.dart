@@ -11,3 +11,4 @@ export 'vehicle_type_model.dart';
 export 'ticket_model.dart';
 export 'trip_detail_model.dart';
 export 'trip_model.dart';
+export 'final_bus_stop_model.dart';

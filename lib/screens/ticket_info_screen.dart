@@ -4,9 +4,13 @@ import 'package:route_master_mobile_app/models/ticket_model.dart';
 class TicketInfoScreen extends StatelessWidget {
   final Ticket ticket;
   final bool isFromQrScan;
+  final Function(dynamic) callback;
 
   const TicketInfoScreen(
-      {super.key, required this.ticket, required this.isFromQrScan});
+      {super.key,
+      required this.ticket,
+      required this.isFromQrScan,
+      required this.callback});
 
   @override
   Widget build(BuildContext context) {
@@ -19,18 +23,9 @@ class TicketInfoScreen extends StatelessWidget {
             'images/ticket_background.png',
             fit: BoxFit.fill,
           ),
-          // Back Button
-          Positioned(
-            top: 60,
-            left: 35,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
           // Company Name
           Positioned(
-            top: 150,
+            top: 120,
             left: 0,
             right: 0,
             child: Text(
@@ -41,7 +36,7 @@ class TicketInfoScreen extends StatelessWidget {
           ),
           // Bus Name
           Positioned(
-            top: 210,
+            top: 270,
             left: 0,
             right: 0,
             child: Text(
@@ -81,8 +76,13 @@ class TicketInfoScreen extends StatelessWidget {
                 // Aceptar Button
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pop(context);
+                    if (isFromQrScan) {
+                      callback(ticket);
+                      Navigator.pop(context);
+                      Navigator.pop(context);
+                    } else {
+                      Navigator.pop(context);
+                    }
                   },
                   child: const Text('Aceptar'),
                 ),

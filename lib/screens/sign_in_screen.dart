@@ -38,7 +38,13 @@ class _SignInScreenState extends State<SignInScreen> {
       }
     } catch (e) {
       // Handle authentication error
-      debugPrint('Authentication failed: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Datos incorrectos, por favor ingrese su usuario y contraseña de nuevo.'),
+          duration: Duration(seconds: 4),
+        ),
+      );
     } finally {
       setState(() => isLoading = false);
     }
@@ -147,7 +153,6 @@ class _SignInScreenState extends State<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Iniciar Sesión')),
       body: Stack(
         children: [
           Padding(

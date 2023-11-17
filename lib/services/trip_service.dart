@@ -92,4 +92,31 @@ class TripService {
       throw Exception('Failed to create trip');
     }
   }
+
+  static Future<Trip> updateTrip(Trip trip, String token) async {
+    final url = Uri.parse('$kDeployedUrl/api/trips/${trip.tripId}');
+
+    final response = await http.put(
+      url,
+      headers: <String, String>{
+        HttpHeaders.acceptHeader: 'application/json',
+        'Content-Type': 'application/json; charset=UTF-8',
+        HttpHeaders.authorizationHeader: 'Bearer $token',
+      },
+      body: jsonEncode(
+        <String, dynamic>{
+          'userId': trip.userId,
+          'startDate': trip.startDate.toIso8601String(),
+          'endDate': trip.endDate.toIso8601String(),
+          'totalPrice': trip.totalPrice
+        },
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      return Trip.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to update trip');
+    }
+  }
 }

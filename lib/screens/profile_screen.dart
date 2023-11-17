@@ -33,6 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController lastName2Controller;
   late TextEditingController phoneNumberController;
   late TextEditingController paymentMethodController;
+  late TextEditingController _amountController;
   late double rechargeAmount;
   late String passengerBalance;
   Map<String, dynamic>? paymentIntent;
@@ -40,7 +41,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    passengerFuture = loadPassengerData();
+    refreshData();
+  }
+
+  Future<void> refreshData() async {
+    setState(() {
+      passengerFuture = loadPassengerData();
+    });
   }
 
   Future<Passenger?> loadPassengerData() async {
@@ -74,189 +81,194 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      body: Row(
-        children: <Widget>[
-          Expanded(
-            child: Stack(
-              children: [
-                Scaffold(
-                  body: FutureBuilder<Passenger?>(
-                    future: passengerFuture,
-                    builder: (BuildContext context,
-                        AsyncSnapshot<Passenger?> snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                            child:
-                                CircularProgressIndicator()); // Show a loading indicator while fetching data
-                      } else if (snapshot.hasError || snapshot.data == null) {
-                        return const Text('Error loading data'); // Handle error
-                      } else {
-                        final passenger = snapshot.data!;
-                        _passenger = snapshot.data!;
+      body: RefreshIndicator(
+        onRefresh: refreshData,
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Stack(
+                children: [
+                  Scaffold(
+                    body: FutureBuilder<Passenger?>(
+                      future: passengerFuture,
+                      builder: (BuildContext context,
+                          AsyncSnapshot<Passenger?> snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child:
+                                  CircularProgressIndicator()); // Show a loading indicator while fetching data
+                        } else if (snapshot.hasError || snapshot.data == null) {
+                          return const Text(
+                              'Error loading data'); // Handle error
+                        } else {
+                          final passenger = snapshot.data!;
+                          _passenger = snapshot.data!;
 
-                        if (firstLoad) {
-                          firstNameController =
-                              TextEditingController(text: passenger.firstName);
-                          lastNameController =
-                              TextEditingController(text: passenger.lastName);
-                          lastName2Controller =
-                              TextEditingController(text: passenger.lastName2);
-                          phoneNumberController = TextEditingController(
-                              text: passenger.phoneNumber);
-                          paymentMethodController = TextEditingController(
-                              text: passenger.paymentMethodId.toString());
-                          passengerBalance = _passenger.wallet!.balance;
-                          firstLoad = false;
-                        }
+                          if (firstLoad) {
+                            firstNameController = TextEditingController(
+                                text: passenger.firstName);
+                            lastNameController =
+                                TextEditingController(text: passenger.lastName);
+                            lastName2Controller = TextEditingController(
+                                text: passenger.lastName2);
+                            phoneNumberController = TextEditingController(
+                                text: passenger.phoneNumber);
+                            paymentMethodController = TextEditingController(
+                                text: passenger.paymentMethodId.toString());
+                            passengerBalance = _passenger.wallet!.balance;
+                            firstLoad = false;
+                          }
 
-                        return Stack(
-                          children: [
-                            ListView(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: CircleAvatar(
-                                    radius: 50, // Adjust the size as needed
-                                    child: ClipOval(
-                                      child: Image.asset(
-                                          'images/profile_icon.png'),
+                          return Stack(
+                            children: [
+                              ListView(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(10.0),
+                                    child: CircleAvatar(
+                                      radius: 50, // Adjust the size as needed
+                                      child: ClipOval(
+                                        child: Image.asset(
+                                            'images/profile_icon.png'),
+                                      ),
                                     ),
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: <Widget>[
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Column(
-                                            children: [
-                                              Text(
-                                                'Saldo:',
-                                                style: const TextStyle(
-                                                    fontSize: 20),
-                                              ),
-                                              Text(
-                                                'S/${double.parse(passengerBalance).toStringAsFixed(2)}',
-                                                style: const TextStyle(
-                                                  fontSize: 25,
-                                                  fontWeight: FontWeight.bold,
+                                  Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: <Widget>[
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Column(
+                                              children: [
+                                                Text(
+                                                  'Saldo:',
+                                                  style: const TextStyle(
+                                                      fontSize: 20),
                                                 ),
-                                              )
-                                            ],
-                                          )
-                                        ],
-                                      ),
-                                      ProfileField(
-                                        label: 'Nombre(s)',
-                                        initialValue: passenger.firstName,
-                                        isReadOnly: isReadOnly,
-                                        controller: firstNameController,
-                                      ),
-                                      ProfileField(
-                                        label: 'Apellido(s)',
-                                        initialValue: passenger.lastName,
-                                        isReadOnly: isReadOnly,
-                                        controller: lastNameController,
-                                      ),
-                                      PaymentMethodDropdownField(
-                                        selectedPaymentMethodId:
-                                            passenger.paymentMethodId,
-                                        isReadOnly: isReadOnly,
-                                      ),
-                                      ProfileField(
-                                        label: 'Celular',
-                                        initialValue:
-                                            "${passenger.phoneNumber}",
-                                        isReadOnly: isReadOnly,
-                                        controller: phoneNumberController,
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: () async {
-                                          bool? isGoogleSignIn =
-                                              await UserService
-                                                  .getGoogleSignIn();
-                                          if (isGoogleSignIn != null &&
-                                              isGoogleSignIn) {
-                                            await GoogleSignIn().disconnect();
-                                          }
-                                          await UserService.removeAll();
-                                          if (context.mounted) {
-                                            Navigator.of(context)
-                                                .pushAndRemoveUntil(
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    const SignInScreen(),
-                                              ),
-                                              (route) =>
-                                                  false, // This effectively removes all routes from the stack
-                                            );
-                                          }
-                                        },
-                                        child: const Text('Cerrar Sesión'),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            isUpdating
-                                ? Container(
-                                    color: Colors.black.withOpacity(
-                                        0.5), // Semi-transparent background
-                                    child: const Center(
-                                      child: CircularProgressIndicator(),
+                                                Text(
+                                                  'S/${double.parse(passengerBalance).toStringAsFixed(2)}',
+                                                  style: const TextStyle(
+                                                    fontSize: 25,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                )
+                                              ],
+                                            )
+                                          ],
+                                        ),
+                                        ProfileField(
+                                          label: 'Nombre(s)',
+                                          initialValue: passenger.firstName,
+                                          isReadOnly: isReadOnly,
+                                          controller: firstNameController,
+                                        ),
+                                        ProfileField(
+                                          label: 'Apellido(s)',
+                                          initialValue: passenger.lastName,
+                                          isReadOnly: isReadOnly,
+                                          controller: lastNameController,
+                                        ),
+                                        PaymentMethodDropdownField(
+                                          selectedPaymentMethodId:
+                                              passenger.paymentMethodId,
+                                          isReadOnly: isReadOnly,
+                                        ),
+                                        ProfileField(
+                                          label: 'Celular',
+                                          initialValue:
+                                              "${passenger.phoneNumber}",
+                                          isReadOnly: isReadOnly,
+                                          controller: phoneNumberController,
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () async {
+                                            bool? isGoogleSignIn =
+                                                await UserService
+                                                    .getGoogleSignIn();
+                                            if (isGoogleSignIn != null &&
+                                                isGoogleSignIn) {
+                                              await GoogleSignIn().disconnect();
+                                            }
+                                            await UserService.removeAll();
+                                            if (context.mounted) {
+                                              Navigator.of(context)
+                                                  .pushAndRemoveUntil(
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      const SignInScreen(),
+                                                ),
+                                                (route) =>
+                                                    false, // This effectively removes all routes from the stack
+                                              );
+                                            }
+                                          },
+                                          child: const Text('Cerrar Sesión'),
+                                        ),
+                                      ],
                                     ),
-                                  )
-                                : const SizedBox.shrink(), // An
-                          ],
-                        );
-                      }
-                    },
+                                  ),
+                                ],
+                              ),
+
+                              isUpdating
+                                  ? Container(
+                                      color: Colors.black.withOpacity(
+                                          0.5), // Semi-transparent background
+                                      child: const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(), // An
+                            ],
+                          );
+                        }
+                      },
+                    ),
                   ),
-                ),
-                Positioned(
-                  top: 30,
-                  left: 5,
-                  child: IconButton(
-                    icon: Icon(Icons.menu),
-                    onPressed: () {
-                      _scaffoldKey.currentState?.openDrawer();
-                    },
+                  Positioned(
+                    top: 30,
+                    left: 5,
+                    child: IconButton(
+                      icon: Icon(Icons.menu),
+                      onPressed: () {
+                        _scaffoldKey.currentState?.openDrawer();
+                      },
+                    ),
                   ),
-                ),
-                Positioned(
-                  top: 30,
-                  right: 5,
-                  child: IconButton(
-                    icon: Icon(isReadOnly ? Icons.edit : Icons.save),
-                    onPressed: () async {
-                      if (!isReadOnly) {
-                        setState(() {
-                          isReadOnly = true;
-                          isUpdating = true;
-                        });
-                        await updatePassengerData()
-                            .then((value) => setState(() {
-                                  isUpdating = false;
-                                }));
-                      } else {
-                        setState(() {
-                          isReadOnly = false;
-                        });
-                      }
-                    },
+                  Positioned(
+                    top: 30,
+                    right: 5,
+                    child: IconButton(
+                      icon: Icon(isReadOnly ? Icons.edit : Icons.save),
+                      onPressed: () async {
+                        if (!isReadOnly) {
+                          setState(() {
+                            isReadOnly = true;
+                            isUpdating = true;
+                          });
+                          await updatePassengerData()
+                              .then((value) => setState(() {
+                                    isUpdating = false;
+                                  }));
+                        } else {
+                          setState(() {
+                            isReadOnly = false;
+                          });
+                        }
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       drawer: Drawer(
         child: ListView(
@@ -326,7 +338,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        TextEditingController _amountController = TextEditingController();
         return AlertDialog(
           title: Text('Recargar Monedero'),
           content: Column(
@@ -378,7 +389,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         );
       },
-    );
+    ).then((value) {
+      _amountController.dispose(); // Dispose the TextEditingController
+    });
+    ;
   }
 
   void makePayment() async {
