@@ -54,4 +54,67 @@ class BusLineService {
       throw Exception('Failed to load bus lines');
     }
   }
+
+  static Future<List<BusLine>> getFavoriteBusLinesByUserId(int userId) async {
+    final url = Uri.parse('$kDeployedUrl/api/buslines/favorites/$userId');
+    final token = await UserService.getToken();
+
+    final response = await http.get(
+      url,
+      headers: <String, String>{
+        HttpHeaders.acceptHeader: 'application/json',
+        'Content-Type': 'application/json; charset=UTF-8',
+        HttpHeaders.authorizationHeader: 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return compute(parseBusLines, response.body);
+    } else {
+      throw Exception('Failed to load bus lines');
+    }
+  }
+
+  static Future<void> addFavoriteBusLine(int userId, int busLineId) async {
+    final url = Uri.parse('$kDeployedUrl/api/buslines/favorites');
+    final token = await UserService.getToken();
+
+    final response = await http.post(
+      url,
+      headers: <String, String>{
+        HttpHeaders.acceptHeader: 'application/json',
+        'Content-Type': 'application/json; charset=UTF-8',
+        HttpHeaders.authorizationHeader: 'Bearer $token',
+      },
+      body: jsonEncode(
+        <String, dynamic>{
+          'passengerId': userId,
+          'busLineId': busLineId,
+        },
+      ),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to add favorite bus line');
+    }
+  }
+
+  static Future<void> removeFavoriteBusLine(int userId, int busLineId) async {
+    final url =
+        Uri.parse('$kDeployedUrl/api/buslines/favorites/$userId/$busLineId');
+    final token = await UserService.getToken();
+
+    final response = await http.delete(
+      url,
+      headers: <String, String>{
+        HttpHeaders.acceptHeader: 'application/json',
+        'Content-Type': 'application/json; charset=UTF-8',
+        HttpHeaders.authorizationHeader: 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to remove favorite bus line');
+    }
+  }
 }

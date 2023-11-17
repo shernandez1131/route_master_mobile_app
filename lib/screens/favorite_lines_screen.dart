@@ -9,16 +9,15 @@ import 'package:route_master_mobile_app/services/bus_line_service.dart';
 import '../models/models.dart';
 import '../services/services.dart';
 
-class LinesScreen extends StatefulWidget {
-  const LinesScreen({super.key});
+class FavoriteLinesScreen extends StatefulWidget {
+  const FavoriteLinesScreen({super.key});
 
   @override
-  State<LinesScreen> createState() => _LinesScreenState();
+  State<FavoriteLinesScreen> createState() => _FavoriteLinesScreenState();
 }
 
-class _LinesScreenState extends State<LinesScreen> {
+class _FavoriteLinesScreenState extends State<FavoriteLinesScreen> {
   late TextEditingController _controller;
-  late Future<List<BusLine>> busLines;
 
   List<BusLine> displayedBusLines = [];
   late Future<List<BusLine>> passengerFavoriteBusLines;
@@ -26,9 +25,6 @@ class _LinesScreenState extends State<LinesScreen> {
   @override
   void initState() {
     super.initState();
-    //displayedBusLines = allBusLines;
-    busLines =
-        BusLineService.getBusLines().then((value) => displayedBusLines = value);
     _controller = TextEditingController();
   }
 
@@ -56,16 +52,16 @@ class _LinesScreenState extends State<LinesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Líneas de Bus'),
+        title: const Text('Líneas Favoritas'),
       ),
       body: FutureBuilder(
-        future: Future.wait([busLines, getFavoriteBusLines()]),
+        future: getFavoriteBusLines(),
         builder: (context, snapshot) {
           void filterBusLines(String query) {
             setState(() {
               query = removeDiacritics(query).toLowerCase();
               if (query.length < 3) {
-                displayedBusLines = snapshot.data![0]
+                displayedBusLines = snapshot.data!
                     .where((line) =>
                         removeDiacritics(line.code)
                             .toLowerCase()
@@ -84,7 +80,7 @@ class _LinesScreenState extends State<LinesScreen> {
                             .contains(query))
                     .toList();
               } else {
-                displayedBusLines = snapshot.data![0]
+                displayedBusLines = snapshot.data!
                     .where((line) =>
                         removeDiacritics(line.code)
                             .toLowerCase()
@@ -158,7 +154,7 @@ class _LinesScreenState extends State<LinesScreen> {
                     onRefresh: refreshBusLines,
                     child: GroupedListView(
                       elements: [
-                        for (var busLine in displayedBusLines)
+                        for (var busLine in snapshot.data!)
                           {
                             'lineId': busLine.lineId,
                             'color': busLine.color.toColor(),
@@ -215,9 +211,6 @@ class _LinesScreenState extends State<LinesScreen> {
                         ),
                       ),
                       itemBuilder: (context, Map<String, dynamic> element) {
-                        final currentLineId = element['lineId'] as int;
-                        final isFavorite = snapshot.data![1]
-                            .any((favLine) => favLine.lineId == currentLineId);
                         return GestureDetector(
                           onTap: () {
                             _openBusStopsMap(element['lineId']);
@@ -283,30 +276,6 @@ class _LinesScreenState extends State<LinesScreen> {
                                 )
                               ],
                             ),
-                            trailing: IconButton(
-                              icon: Icon(
-                                isFavorite ? Icons.star : Icons.star_border,
-                                color: isFavorite ? Colors.yellow : null,
-                              ),
-                              onPressed: () async {
-                                if (isFavorite) {
-                                  // Remove currentLineId from favorites and update UI
-                                  snapshot.data![1].removeWhere((favLine) =>
-                                      favLine.lineId == element['lineId']);
-                                  // Call function to remove from backend favorites
-                                  await removeFromFavorites(currentLineId);
-                                } else {
-                                  // Add currentLineId to favorites and update UI
-                                  final currentLine = snapshot.data![0]
-                                      .firstWhere((line) =>
-                                          line.lineId == element['lineId']);
-                                  snapshot.data![1].add(currentLine);
-                                  // Call function to add to backend favorites
-                                  await addToFavorites(currentLineId);
-                                }
-                                setState(() {});
-                              },
-                            ),
                           ),
                         );
                       },
@@ -336,19 +305,5 @@ class _LinesScreenState extends State<LinesScreen> {
 
   Future<List<BusStop>> fetchBusStopsByBusLineId(id) async {
     return await BusStopService.getBusStopsByUserId(id);
-  }
-
-  Future<void> removeFromFavorites(int currentLineId) async {
-    final userId = await UserService.getUserId();
-    if (userId != null) {
-      await BusLineService.removeFavoriteBusLine(userId, currentLineId);
-    }
-  }
-
-  Future<void> addToFavorites(int currentLineId) async {
-    final userId = await UserService.getUserId();
-    if (userId != null) {
-      await BusLineService.addFavoriteBusLine(userId, currentLineId);
-    }
   }
 }

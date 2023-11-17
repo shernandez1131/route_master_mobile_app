@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:route_master_mobile_app/models/models.dart';
+import 'package:route_master_mobile_app/screens/favorite_lines_screen.dart';
 import 'package:route_master_mobile_app/screens/tickets_history_screen.dart';
 import 'package:route_master_mobile_app/services/services.dart';
 import 'package:route_master_mobile_app/widgets/widgets.dart';
@@ -270,6 +271,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: 100, // Set your desired width
                 height: 100, // Set your desired height
               ),
+            ),
+            ListTile(
+              leading: Icon(Icons.star), // Icon for Favorite Lines
+              title: Text('Líneas favoritas'),
+              onTap: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => FavoriteLinesScreen(),
+                ));
+              },
             ),
             ListTile(
               leading: Icon(Icons.directions_bus), // Icon for Trip History
