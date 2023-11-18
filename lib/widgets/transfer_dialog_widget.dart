@@ -7,7 +7,7 @@ class TransferDialog extends StatefulWidget {
   final String passengerBalance;
   const TransferDialog({super.key, required this.passengerBalance});
   @override
-  _TransferDialogState createState() => _TransferDialogState();
+  State<TransferDialog> createState() => _TransferDialogState();
 }
 
 class _TransferDialogState extends State<TransferDialog> {

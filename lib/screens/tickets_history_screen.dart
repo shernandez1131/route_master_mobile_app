@@ -68,7 +68,7 @@ class _TicketsHistoryScreenState extends State<TicketsHistoryScreen>
                         Text(tabData[index].companyName),
                         Text(
                           '${tabData[index].createdOn.day}/${tabData[index].createdOn.month}/${tabData[index].createdOn.year} ${tabData[index].createdOn.hour}:${tabData[index].createdOn.minute}',
-                          style: TextStyle(color: Colors.grey),
+                          style: const TextStyle(color: Colors.grey),
                         ),
                       ],
                     ),

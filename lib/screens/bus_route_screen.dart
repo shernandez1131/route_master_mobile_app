@@ -13,11 +13,11 @@ class BusRouteScreen extends StatefulWidget {
   const BusRouteScreen({Key? key, required this.busStops}) : super(key: key);
 
   @override
-  _BusRouteScreenState createState() => _BusRouteScreenState();
+  State<BusRouteScreen> createState() => _BusRouteScreenState();
 }
 
 class _BusRouteScreenState extends State<BusRouteScreen> {
-  GoogleMapController? _mapController;
+  //GoogleMapController? _mapController;
   Set<Marker> _markers = {};
   BitmapDescriptor? busIcon;
   List<BusLine> busLines = [];
@@ -32,7 +32,7 @@ class _BusRouteScreenState extends State<BusRouteScreen> {
 
   void _initBusIcon() async {
     busIcon = await BitmapDescriptor.fromAssetImage(
-      ImageConfiguration(size: Size(100, 100)),
+      const ImageConfiguration(size: Size(100, 100)),
       'images/bus_stop_icon.png',
     );
     setState(() {
@@ -49,7 +49,7 @@ class _BusRouteScreenState extends State<BusRouteScreen> {
           icon: BitmapDescriptor.defaultMarker,
           infoWindow: InfoWindow(title: busStop.name),
           onTap: () async {
-            print('StopId: ${busStop.busStopId}. Clicked ${busStop.name}');
+            //debugPrint('StopId: ${busStop.busStopId}. Clicked ${busStop.name}');
             // Handle marker tap: show bus stop details, navigate, etc.
             setState(() {
               isLoading = true;
@@ -65,8 +65,8 @@ class _BusRouteScreenState extends State<BusRouteScreen> {
                 context: context,
                 builder: (context) {
                   return AlertDialog(
-                    title: Text('Líneas de bus'),
-                    content: Container(
+                    title: const Text('Líneas de bus'),
+                    content: SizedBox(
                       width: double.maxFinite,
                       child: ListView.builder(
                         shrinkWrap: true,
@@ -137,7 +137,7 @@ class _BusRouteScreenState extends State<BusRouteScreen> {
                         onPressed: () {
                           Navigator.of(context).pop();
                         },
-                        child: Text('OK'),
+                        child: const Text('OK'),
                       ),
                     ],
                   );
@@ -151,13 +151,13 @@ class _BusRouteScreenState extends State<BusRouteScreen> {
   }
 
   void _showDisclaimer() {
-    WidgetsBinding.instance?.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       showDialog(
         context: context,
         builder: (context) {
           return AlertDialog(
-            title: Text('Información'),
-            content: Text(
+            title: const Text('Información'),
+            content: const Text(
               'Disculpe, esta información puede no ser precisa. Actualmente no disponemos de la información completa de paradas de autobús en Lima. Este es un trabajo en proceso.',
             ),
             actions: [
@@ -165,7 +165,7 @@ class _BusRouteScreenState extends State<BusRouteScreen> {
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
-                child: Text('OK'),
+                child: const Text('OK'),
               ),
             ],
           );
@@ -184,7 +184,7 @@ class _BusRouteScreenState extends State<BusRouteScreen> {
               target: widget.busStops.isNotEmpty
                   ? LatLng(widget.busStops.first.latitude,
                       widget.busStops.first.longitude)
-                  : LatLng(-12.0461513,
+                  : const LatLng(-12.0461513,
                       -77.0306332), // Default to center if no bus stops found
               zoom: 12,
             ),

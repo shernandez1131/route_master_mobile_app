@@ -112,7 +112,7 @@ class _MapScreenState extends PlacesAutocompleteState {
         // Update values for the next iteration
         lastDistance = distance;
         lastTime = currentTime;
-        print(
+        debugPrint(
             "Speed: ${currentSpeed * 3600} km/s | ${currentSpeed * 1000} m/s");
         setState(() {
           _currentLocation = newLocation;
@@ -390,7 +390,7 @@ class _MapScreenState extends PlacesAutocompleteState {
                                     MaterialStateProperty.all<Color>(
                                         Colors.white),
                               ),
-                              child: Text("Finalizar Viaje"),
+                              child: const Text("Finalizar Viaje"),
                             ),
                     )),
         ),
@@ -748,7 +748,7 @@ class _MapScreenState extends PlacesAutocompleteState {
         totalPrice: -1);
     currentTrip = await TripService.postTrip(tempTrip, token);
     while (busStopsList.isEmpty) {
-      await Future.delayed(Duration(milliseconds: 300));
+      await Future.delayed(const Duration(milliseconds: 300));
     }
     // Create a Map using the coordinates as keys for quick access
     Map<String, BusStop> busStopCoordinatesMap = {};
@@ -793,7 +793,8 @@ class _MapScreenState extends PlacesAutocompleteState {
           allowedBusesList: currentRouteBusNames,
           callback: (dynamic data) {
             // Handle the received data from the second screen here
-            print('Data received in MapScreen from TicketInfoScreen: $data');
+            debugPrint(
+                'Data received in MapScreen from TicketInfoScreen: $data');
             paidBusFinalStop =
                 finalStopsList.firstWhere((e) => e.busLineName == data.busName);
             setState(() {

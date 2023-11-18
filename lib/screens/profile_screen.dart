@@ -399,7 +399,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 if (amountText.isNotEmpty) {
                   rechargeAmount = double.parse(amountText);
                   // Validate and use the 'amount' value
-                  print('Recargar $rechargeAmount PEN');
+                  debugPrint('Recargar $rechargeAmount PEN');
                 }
                 setState(() {
                   isPaymentPanelVisible = true;
@@ -466,7 +466,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 passengerBalance = value.balance;
                 _showRechargeConfirmation();
               }));
-      print("Payment sheet displayed successfully");
+      debugPrint("Payment sheet displayed successfully");
     } catch (e) {
       throw Exception("Error displaying payment sheet: $e");
     }

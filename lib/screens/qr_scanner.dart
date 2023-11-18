@@ -164,32 +164,34 @@ class _QRScannerPageState extends State<QRScannerPage> {
         tempTicket.userId = (await UserService.getUserId())!;
 
         // Show the confirmation dialog
-        bool? confirmTicket = await showDialog<bool>(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text("Confirmación"),
-              content: Text(
-                "¿Estás seguro de generar un boleto para el bus ${tempTicket.busName} de la empresa ${tempTicket.companyName}?",
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(true); // Accept button
-                  },
-                  child: const Text('Aceptar'),
+        bool? confirmTicket;
+        if (context.mounted) {
+          confirmTicket = await showDialog<bool>(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text("Confirmación"),
+                content: Text(
+                  "¿Estás seguro de generar un boleto para el bus ${tempTicket.busName} de la empresa ${tempTicket.companyName}?",
                 ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(false); // Cancel button
-                  },
-                  child: const Text('Cancelar'),
-                ),
-              ],
-            );
-          },
-        );
-
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(true); // Accept button
+                    },
+                    child: const Text('Aceptar'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(false); // Cancel button
+                    },
+                    child: const Text('Cancelar'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
         // If the user confirms the ticket, create and navigate to the TicketInfoScreen
         if (confirmTicket == true) {
           var ticket = await TicketService.postTicket(

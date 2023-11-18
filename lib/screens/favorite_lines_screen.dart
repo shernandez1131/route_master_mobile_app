@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:grouped_list/grouped_list.dart';
 import 'package:route_master_mobile_app/extensions.dart';
 import 'package:route_master_mobile_app/screens/bus_route_screen.dart';
-import 'package:route_master_mobile_app/services/bus_line_service.dart';
 import '../models/models.dart';
 import '../services/services.dart';
 

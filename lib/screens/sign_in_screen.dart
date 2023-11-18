@@ -38,13 +38,15 @@ class _SignInScreenState extends State<SignInScreen> {
       }
     } catch (e) {
       // Handle authentication error
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Datos incorrectos, por favor ingrese su usuario y contraseña de nuevo.'),
-          duration: Duration(seconds: 4),
-        ),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Datos incorrectos, por favor ingrese su usuario y contraseña de nuevo.'),
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
     } finally {
       setState(() => isLoading = false);
     }

@@ -3,15 +3,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart' as st;
 import 'package:http/http.dart' as http;
-import 'package:permission_handler/permission_handler.dart';
+//import 'package:permission_handler/permission_handler.dart';
 
 class PaymentScreen extends StatefulWidget {
   final double monto;
 
-  PaymentScreen({Key? key, required this.monto}) : super(key: key);
+  const PaymentScreen({Key? key, required this.monto}) : super(key: key);
 
   @override
-  _PaymentScreenState createState() => _PaymentScreenState();
+  State<PaymentScreen> createState() => _PaymentScreenState();
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
@@ -47,9 +47,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void displayPaymentSheet() async {
     try {
       await st.Stripe.instance.presentPaymentSheet();
-      print("Done");
+      debugPrint("Done");
     } catch (e) {
-      print("Failed");
+      debugPrint("Failed");
     }
   }
 
@@ -92,10 +92,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
           paymentIntentClientSecret: 'paymentIntentClientSecret');
     } on st.StripeError catch (e) {
       // Handle Stripe errors
-      print('Error code: ${e.code}, Error message: ${e.message}');
+      debugPrint('Error code: ${e.code}, Error message: ${e.message}');
     } catch (e) {
       // Handle other errors
-      print('Error: $e');
+      debugPrint('Error: $e');
     }
   }
 
@@ -111,7 +111,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
             children: [
               Text(
                 'Pagar S/. ${widget.monto} utilizando',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               Padding(
                 padding: const EdgeInsets.only(top: 20, bottom: 20),
