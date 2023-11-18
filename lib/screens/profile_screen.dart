@@ -35,6 +35,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController paymentMethodController;
   late TextEditingController _amountController;
   late double rechargeAmount;
+  double transferAmount = 0.0;
   late String passengerBalance;
   Map<String, dynamic>? paymentIntent;
 
@@ -146,10 +147,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           children: [
                                             Column(
                                               children: [
-                                                Text(
+                                                const Text(
                                                   'Saldo:',
-                                                  style: const TextStyle(
-                                                      fontSize: 20),
+                                                  style:
+                                                      TextStyle(fontSize: 20),
                                                 ),
                                                 Text(
                                                   'S/${double.parse(passengerBalance).toStringAsFixed(2)}',
@@ -235,7 +236,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     top: 30,
                     left: 5,
                     child: IconButton(
-                      icon: Icon(Icons.menu),
+                      icon: const Icon(Icons.menu),
                       onPressed: () {
                         _scaffoldKey.currentState?.openDrawer();
                       },
@@ -275,7 +276,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           padding: EdgeInsets.zero,
           children: <Widget>[
             DrawerHeader(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white, // Set your desired color
               ),
               child: Image.asset(
@@ -285,47 +286,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             ListTile(
-              leading: Icon(Icons.star), // Icon for Favorite Lines
-              title: Text('Líneas favoritas'),
+              leading: const Icon(Icons.star), // Icon for Favorite Lines
+              title: const Text('Líneas favoritas'),
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => FavoriteLinesScreen(),
+                  builder: (context) => const FavoriteLinesScreen(),
                 ));
               },
             ),
             ListTile(
-              leading: Icon(Icons.directions_bus), // Icon for Trip History
-              title: Text('Historial de Viajes'),
+              leading:
+                  const Icon(Icons.directions_bus), // Icon for Trip History
+              title: const Text('Historial de Viajes'),
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => TripHistoryScreen(),
+                  builder: (context) => const TripHistoryScreen(),
                 ));
               },
             ),
             ListTile(
-              leading: Icon(Icons.receipt), // Icon for Ticket History
-              title: Text('Historial de Boletos'),
+              leading: const Icon(Icons.receipt), // Icon for Ticket History
+              title: const Text('Historial de Boletos'),
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => TicketsHistoryScreen(),
+                  builder: (context) => const TicketsHistoryScreen(),
                 ));
               },
             ),
             ListTile(
-              leading: Icon(Icons.history), // Icon for Transaction History
-              title: Text('Historial de Transacciones'),
+              leading:
+                  const Icon(Icons.history), // Icon for Transaction History
+              title: const Text('Historial de Transacciones'),
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => TransactionHistoryScreen(),
+                  builder: (context) => const TransactionHistoryScreen(),
                 ));
               },
             ),
             ListTile(
-              leading: Icon(Icons.add), // Icon for Transaction History
-              title: Text('Recargar Monedero'),
+              leading: const Icon(Icons.add), // Icon for Transaction History
+              title: const Text('Recargar Monedero'),
               onTap: () {
                 _scaffoldKey.currentState?.closeDrawer();
                 _showRecargarDialog();
+              },
+            ),
+            ListTile(
+              leading: const Icon(
+                  Icons.mobile_screen_share), // Icon for Transaction History
+              title: const Text('Compartir Saldo'),
+              onTap: () {
+                _scaffoldKey.currentState?.closeDrawer();
+                _showTransferDialog();
+              },
+            ),
+            ListTile(
+              leading: const Icon(
+                  Icons.monetization_on), // Icon for Transaction History
+              title: const Text('Recibir Saldo'),
+              onTap: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => const TransferBalanceWaitingScreen(),
+                ));
               },
             ),
           ],
@@ -335,20 +357,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showRecargarDialog() {
+    _amountController = TextEditingController();
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Recargar Monedero'),
+          title: const Text('Recargar Monedero'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('¿Cuál monto desea recargar en su monedero?'),
-              SizedBox(height: 16),
+              const Text('¿Cuál monto desea recargar en su monedero?'),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('S/. ', style: TextStyle(fontSize: 20)),
+                  const Text('S/. ', style: TextStyle(fontSize: 20)),
                   SizedBox(
                     width: 150,
                     child: TextField(
@@ -359,7 +382,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           RegExp(r'^\d*\.?\d{0,2}$'),
                         ),
                       ],
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: 'Monto',
                       ),
                     ),
@@ -384,15 +407,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Navigator.of(context).pop(); // Close the dialog
                 makePayment();
               },
-              child: Text('Recargar'),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(Colors.green),
+                foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
+              ),
+              child: const Text('Recargar'),
             ),
           ],
         );
       },
-    ).then((value) {
-      _amountController.dispose(); // Dispose the TextEditingController
-    });
-    ;
+    );
+  }
+
+  void _showTransferDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return TransferDialog(passengerBalance: passengerBalance);
+      },
+    );
   }
 
   void makePayment() async {

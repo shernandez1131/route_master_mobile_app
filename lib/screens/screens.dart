@@ -11,3 +11,5 @@ export 'lines_screen.dart';
 export 'stops_screen.dart';
 export 'trip_history_screen.dart';
 export 'payment_screen.dart';
+export 'transfer_balance_screen.dart';
+export 'transfer_balance_waiting_screen.dart';
