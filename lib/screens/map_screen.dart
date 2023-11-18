@@ -67,7 +67,7 @@ class _MapScreenState extends PlacesAutocompleteState {
   late Passenger? currentPassenger;
   bool isPaidTrip = false;
   bool enableFinishJourneyBtn = false;
-  final GlobalKey _modelScaffoldKey = GlobalKey();
+  //final GlobalKey _modelScaffoldKey = GlobalKey();
 
   @override
   void initState() {
@@ -830,7 +830,7 @@ class _MapScreenState extends PlacesAutocompleteState {
             return Padding(
               padding: EdgeInsets.only(
                   bottom: MediaQuery.of(context).viewInsets.bottom),
-              child: Container(
+              child: SizedBox(
                 height: MediaQuery.of(context).size.height * 0.5,
                 child: PageView.builder(
                   itemCount: currentRouteBusNames.length,
@@ -842,7 +842,7 @@ class _MapScreenState extends PlacesAutocompleteState {
                           vertical: 8.0, horizontal: 16.0),
                       child: Column(
                         children: [
-                          Text(
+                          const Text(
                             'Califica tu viaje',
                             style: TextStyle(
                               fontSize: 20,

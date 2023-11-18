@@ -176,7 +176,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen>
                               itemSize: 20.0,
                               direction: Axis.horizontal,
                             )
-                          : Text(
+                          : const Text(
                               'Sin calificar',
                             ),
                     ],
