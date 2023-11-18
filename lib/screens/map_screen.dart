@@ -4,11 +4,13 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_google_places_hoc081098/flutter_google_places_hoc081098.dart';
 import 'package:flutter_google_places_hoc081098/google_maps_webservice_places.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_api_headers/google_api_headers.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:route_master_mobile_app/models/models.dart';
 import 'package:route_master_mobile_app/screens/qr_scanner.dart';
+import 'package:route_master_mobile_app/services/rating_service.dart';
 import 'package:route_master_mobile_app/services/trip_service.dart';
 import 'package:uuid/uuid.dart';
 import '../constants.dart';
@@ -65,6 +67,7 @@ class _MapScreenState extends PlacesAutocompleteState {
   late Passenger? currentPassenger;
   bool isPaidTrip = false;
   bool enableFinishJourneyBtn = false;
+  final GlobalKey _modelScaffoldKey = GlobalKey();
 
   @override
   void initState() {
@@ -774,8 +777,9 @@ class _MapScreenState extends PlacesAutocompleteState {
       if (destinationBusStop != null) {
         currentBus.destinationStopId = destinationBusStop.busStopId;
       }
-
-      currentBus = await TripService.postTripDetail(currentBus, token);
+      var postedTripDetail =
+          await TripService.postTripDetail(currentBus, token);
+      currentBus.tripDetailId = postedTripDetail.tripDetailId;
     }
 
     setState(() {});
@@ -805,10 +809,164 @@ class _MapScreenState extends PlacesAutocompleteState {
   void _finishJourney() async {
     isJourneyStarted = false;
     var tripToUpdate = currentTrip;
+    tripToUpdate.totalPrice =
+        tripToUpdate.totalPrice == -1 ? 0 : tripToUpdate.totalPrice;
     tripToUpdate.endDate = DateTime.now();
     String token = (await UserService.getToken())!;
     currentTrip = await TripService.updateTrip(tripToUpdate, token);
-    setState(() {});
+    var userId = await UserService.getUserId();
+    var currentRating = 0;
+    var commentController = TextEditingController();
+    var pageViewController = PageController(viewportFraction: 1);
+    setState(
+      () {
+        // show bottom sheet to rate each bus line
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          isDismissible: false,
+          builder: (context) {
+            return Padding(
+              padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom),
+              child: Container(
+                height: MediaQuery.of(context).size.height * 0.5,
+                child: PageView.builder(
+                  itemCount: currentRouteBusNames.length,
+                  controller: pageViewController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8.0, horizontal: 16.0),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Califica tu viaje',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Divider(
+                            thickness: 1,
+                          ),
+                          Text(
+                            'Línea: ${currentRouteBusNames[index]}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8.0),
+                          RatingBar.builder(
+                            initialRating: 0,
+                            minRating: 1,
+                            direction: Axis.horizontal,
+                            allowHalfRating: false,
+                            itemCount: 5,
+                            itemSize: 40,
+                            itemPadding:
+                                const EdgeInsets.symmetric(horizontal: 1.0),
+                            itemBuilder: (context, _) => const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                            ),
+                            onRatingUpdate: (rating) {
+                              currentRating = rating.toInt();
+                            },
+                          ),
+                          const SizedBox(height: 8.0),
+                          TextField(
+                            maxLines: 2,
+                            controller: commentController,
+                            keyboardType: TextInputType.text,
+                            textInputAction: TextInputAction.done,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              hintMaxLines: 2,
+                              hintText: 'Deja un comentario',
+                            ),
+                          ),
+                          const SizedBox(height: 8.0),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                style: ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                          Colors.grey.shade100),
+                                  foregroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                          Colors.black),
+                                ),
+                                child: const Text('Cancelar'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  //if currentRating = 0, show error
+                                  if (currentRating == 0) {
+                                    //show dialog
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          title: const Text(
+                                              'Calificación no válida'),
+                                          content: const Text(
+                                              'Por favor, califica tu viaje.'),
+                                          actions: <Widget>[
+                                            TextButton(
+                                              child: const Text('Cerrar'),
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                    return;
+                                  }
+
+                                  var rating = Rating(
+                                    value: currentRating,
+                                    comment: commentController.text,
+                                    passengerId: userId!,
+                                    tripDetailId: currentRouteBusDetails[index]
+                                        .tripDetailId,
+                                  );
+                                  RatingService.postRating(rating);
+                                  if (pageViewController.page!.toInt() ==
+                                      currentRouteBusNames.length - 1) {
+                                    Navigator.pop(context);
+                                  } else {
+                                    commentController.clear();
+                                    pageViewController.nextPage(
+                                        duration:
+                                            const Duration(milliseconds: 300),
+                                        curve: Curves.easeInOut);
+                                  }
+                                },
+                                child: const Text('Enviar'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   void _finishPaidJourney() async {

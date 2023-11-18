@@ -1,7 +1,7 @@
 import 'package:route_master_mobile_app/models/models.dart';
 
 class TripDetail {
-  final int tripDetailId;
+  late int tripDetailId;
   late int tripId;
   final int? vehicleId;
   final int lineId;
@@ -13,6 +13,7 @@ class TripDetail {
   final String startCoordinates;
   final String finalCoordinates;
   final BusLine? busLine;
+  final Rating? rating;
 
   TripDetail({
     required this.tripId,
@@ -27,6 +28,7 @@ class TripDetail {
     required this.startCoordinates,
     required this.finalCoordinates,
     this.busLine,
+    this.rating,
   });
 
   factory TripDetail.fromJson(Map<String, dynamic> json) {
@@ -44,6 +46,7 @@ class TripDetail {
       finalCoordinates: '',
       busLine:
           json['busLine'] != null ? BusLine.fromJson(json['busLine']) : null,
+      rating: json['rating'] != null ? Rating.fromJson(json['rating']) : null,
     );
   }
 }
