@@ -123,6 +123,16 @@ class UserService {
     return prefs.getInt('user_id');
   }
 
+  static Future<void> saveWalletId(int walletId) async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setInt('wallet_id', walletId);
+  }
+
+  static Future<int?> getWalletId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('wallet_id');
+  }
+
   static Future<void> saveGoogleSignIn(bool isGoogleSignIn) async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setBool('google_sign_in', isGoogleSignIn);

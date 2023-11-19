@@ -119,6 +119,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 text: passenger.paymentMethodId.toString());
                             passengerBalance = _passenger.wallet!.balance;
                             firstLoad = false;
+                            UserService.saveWalletId(
+                                _passenger.wallet!.walletId);
                           }
 
                           return Stack(
