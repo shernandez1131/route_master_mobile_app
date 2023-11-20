@@ -26,6 +26,7 @@ class _TransferBalanceScreenState extends State<TransferBalanceScreen> {
   String balanceReceiver = "";
   late int? userId;
   late String? token;
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -88,123 +89,154 @@ class _TransferBalanceScreenState extends State<TransferBalanceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(),
-      body: WillPopScope(
-        onWillPop: () async {
-          // Perform actions before navigating back
-          bool shouldNavigate = await showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text(
-                  '¿Está seguro que desea salir?',
-                  textAlign: TextAlign.center,
-                ),
-                content: Text(
-                  'Si tiene una transferencia en progreso, no podrá ser cancelada.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 15),
-                ),
-                actions: <Widget>[
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context, false); // Don't exit
-                    },
-                    child: Text('No'),
-                  ),
-                  TextButton(
-                    onPressed: () async {
-                      if (isSearching) {
-                        stopServices();
-                      }
-                      Navigator.pop(context, true); // Exit
-                    },
-                    child: Text('Sí'),
-                  ),
-                ],
-              );
-            },
-          );
-
-          // Return whether to allow back navigation or not
-          return shouldNavigate; // If null is returned, default to false
-        },
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                !isSearching
-                    ? ElevatedButton(
-                        child:
-                            const Text("Buscar Dispositivos para Transferir"),
+      body: Stack(
+        children: [
+          WillPopScope(
+            onWillPop: () async {
+              // Perform actions before navigating back
+              bool shouldNavigate = await showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text(
+                      '¿Está seguro que desea salir?',
+                      textAlign: TextAlign.center,
+                    ),
+                    content: Text(
+                      'Si tiene una transferencia en progreso, no podrá ser cancelada.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 15),
+                    ),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context, false); // Don't exit
+                        },
+                        child: Text('No'),
+                      ),
+                      TextButton(
                         onPressed: () async {
-                          try {
-                            isSearching = await Nearby()
-                                .startAdvertising(userName, strategy,
-                                    onConnectionInitiated: (id, info) {
-                              onConnectionInit(id, info);
-                            }, onConnectionResult: (id, status) {
-                              showSnackbar(context, status);
-                            }, onDisconnected: (id) {
-                              showSnackbar(context,
-                                  "Disconnected: ${endpointMap[id]!.endpointName}, id $id");
-                              setState(() {
-                                endpointMap.remove(id);
+                          if (isSearching) {
+                            stopServices();
+                          }
+                          Navigator.pop(context, true); // Exit
+                        },
+                        child: Text('Sí'),
+                      ),
+                    ],
+                  );
+                },
+              );
+
+              // Return whether to allow back navigation or not
+              return shouldNavigate; // If null is returned, default to false
+            },
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    !isSearching
+                        ? FutureBuilder<Passenger?>(
+                            future: loadPassengerData(),
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData) {
+                                return CircularProgressIndicator();
+                              } else if (snapshot.hasError) {
+                                return Text("${snapshot.error}");
+                              }
+                              return ElevatedButton(
+                                child: const Text(
+                                    "Buscar Dispositivos para Transferir"),
+                                onPressed: () async {
+                                  setState(() {
+                                    isLoading = true;
+                                  });
+                                  try {
+                                    isSearching = await Nearby().startAdvertising(
+                                        userName, strategy,
+                                        onConnectionInitiated: (id, info) {
+                                      onConnectionInit(id, info);
+                                    }, onConnectionResult: (id, status) {
+                                      showSnackbar(context, status);
+                                    }, onDisconnected: (id) {
+                                      showSnackbar(context,
+                                          "Disconnected: ${endpointMap[id]!.endpointName}, id $id");
+                                      setState(() {
+                                        endpointMap.remove(id);
+                                      });
+                                    },
+                                        serviceId:
+                                            'com.example.route_master_mobile_app');
+                                    showSnackbar(
+                                        context, "BUSCANDO DISPOSITIVOS");
+                                    setState(() {});
+                                  } catch (exception) {
+                                    showSnackbar(context, exception.toString());
+                                  }
+                                  setState(() {
+                                    isLoading = false;
+                                  });
+                                },
+                              );
+                            })
+                        : ElevatedButton(
+                            child: const Text("Detener Búsqueda"),
+                            onPressed: () async {
+                              stopServices();
+                            },
+                          ),
+                    const Divider(),
+                    canSendBalance
+                        ? ElevatedButton(
+                            child: Column(
+                              children: [
+                                Text(
+                                  "Enviar S/. ${widget.saldo}",
+                                  textAlign: TextAlign.center,
+                                ),
+                                Text(
+                                  "a $balanceReceiver",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 10),
+                                )
+                              ],
+                            ),
+                            onPressed: () async {
+                              endpointMap.forEach((key, value) {
+                                var transferObject = {
+                                  "walletId": passenger.wallet!.walletId,
+                                  "userEmail": passenger.user!.email,
+                                  "saldo": widget.saldo
+                                };
+                                String transferString =
+                                    jsonEncode(transferObject);
+                                // showSnackbar(context,
+                                //     "Sending $transferString to ${value.endpointName}");
+                                Nearby().sendBytesPayload(
+                                    key,
+                                    Uint8List.fromList(
+                                        transferString.codeUnits));
                               });
                             },
-                                    serviceId:
-                                        'com.example.route_master_mobile_app');
-                            showSnackbar(context, "BUSCANDO DISPOSITIVOS");
-                            setState(() {});
-                          } catch (exception) {
-                            showSnackbar(context, exception.toString());
-                          }
-                        },
-                      )
-                    : ElevatedButton(
-                        child: const Text("Detener Búsqueda"),
-                        onPressed: () async {
-                          stopServices();
-                        },
-                      ),
-                const Divider(),
-                canSendBalance
-                    ? ElevatedButton(
-                        child: Column(
-                          children: [
-                            Text(
-                              "Enviar S/. ${widget.saldo}",
-                              textAlign: TextAlign.center,
-                            ),
-                            Text(
-                              "a $balanceReceiver",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 10),
-                            )
-                          ],
-                        ),
-                        onPressed: () async {
-                          endpointMap.forEach((key, value) {
-                            var transferObject = {
-                              "walletId": passenger.wallet!.walletId,
-                              "userEmail": passenger.user!.email,
-                              "saldo": widget.saldo
-                            };
-                            String transferString = jsonEncode(transferObject);
-                            // showSnackbar(context,
-                            //     "Sending $transferString to ${value.endpointName}");
-                            Nearby().sendBytesPayload(key,
-                                Uint8List.fromList(transferString.codeUnits));
-                          });
-                        },
-                      )
-                    : const SizedBox.shrink(),
-              ],
+                          )
+                        : const SizedBox.shrink(),
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
+          isLoading
+              ? Container(
+                  color: Colors.black.withOpacity(0.5),
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ],
       ),
     );
   }
