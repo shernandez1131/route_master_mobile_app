@@ -7,3 +7,4 @@ export 'tickets_service.dart';
 export 'bus_line_service.dart';
 export 'bus_stop_service.dart';
 export 'notification_service.dart';
+export 'transaction_service.dart';

@@ -657,6 +657,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.4"
+  nearby_connections:
+    dependency: "direct main"
+    description:
+      name: nearby_connections
+      sha256: "7a7237421c4654867a60a0a3314f150962097c0383ebab8ad2d5942cedd54da6"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.1"
   package_config:
     dependency: transitive
     description:

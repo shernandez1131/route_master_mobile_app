@@ -5,7 +5,9 @@ import '../screens/screens.dart';
 
 class TransferDialog extends StatefulWidget {
   final String passengerBalance;
-  const TransferDialog({super.key, required this.passengerBalance});
+  final Function? onTransferComplete;
+  const TransferDialog(
+      {super.key, required this.passengerBalance, this.onTransferComplete});
   @override
   State<TransferDialog> createState() => _TransferDialogState();
 }
@@ -94,11 +96,20 @@ class _TransferDialogState extends State<TransferDialog> {
             if (amountText.isNotEmpty) {
               double transferAmount = double.parse(amountText);
               if (transferAmount <= double.parse(widget.passengerBalance)) {
-                Navigator.of(context).push(MaterialPageRoute(
+                Navigator.of(context).pop();
+                Navigator.of(context)
+                    .push(MaterialPageRoute(
                   builder: (context) => TransferBalanceScreen(
                     saldo: transferAmount.toString(),
                   ),
-                ));
+                ))
+                    .then((_) {
+                  // Invoke the callback when TransferBalanceScreen is dismissed
+                  if (widget.onTransferComplete != null) {
+                    widget.onTransferComplete!();
+                  }
+                });
+                ;
               }
             }
           },
@@ -108,7 +119,7 @@ class _TransferDialogState extends State<TransferDialog> {
             }),
             foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
           ),
-          child: const Text('Recargar'),
+          child: const Text('Transferir'),
         ),
       ],
     );

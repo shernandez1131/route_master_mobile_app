@@ -49,6 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> refreshData() async {
     setState(() {
       passengerFuture = loadPassengerData();
+      print("Test");
     });
   }
 
@@ -106,6 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         } else {
                           final passenger = snapshot.data!;
                           _passenger = snapshot.data!;
+                          passengerBalance = _passenger.wallet!.balance;
 
                           if (firstLoad) {
                             firstNameController = TextEditingController(
@@ -118,7 +120,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 text: passenger.phoneNumber);
                             paymentMethodController = TextEditingController(
                                 text: passenger.paymentMethodId.toString());
-                            passengerBalance = _passenger.wallet!.balance;
                             firstLoad = false;
                             UserService.saveWalletId(
                                 _passenger.wallet!.walletId);
@@ -348,9 +349,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Icons.monetization_on), // Icon for Transaction History
               title: const Text('Recibir Saldo'),
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => const TransferBalanceWaitingScreen(),
-                ));
+                Navigator.of(context).pop();
+                Navigator.of(context)
+                    .push(MaterialPageRoute(
+                      builder: (context) =>
+                          const TransferBalanceWaitingScreen(),
+                    ))
+                    .then((value) => refreshData());
               },
             ),
           ],
@@ -426,7 +431,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return TransferDialog(passengerBalance: passengerBalance);
+        return TransferDialog(
+          passengerBalance: passengerBalance,
+          onTransferComplete: () {
+            refreshData();
+          },
+        );
       },
     );
   }
