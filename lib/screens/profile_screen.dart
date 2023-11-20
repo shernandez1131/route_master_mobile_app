@@ -6,6 +6,7 @@ import 'package:route_master_mobile_app/models/models.dart';
 import 'package:route_master_mobile_app/screens/favorite_lines_screen.dart';
 import 'package:route_master_mobile_app/screens/tickets_history_screen.dart';
 import 'package:route_master_mobile_app/services/services.dart';
+import 'package:route_master_mobile_app/services/transaction_service.dart';
 import 'package:route_master_mobile_app/widgets/widgets.dart';
 import 'screens.dart';
 import 'package:http/http.dart' as http;
@@ -468,6 +469,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 passengerBalance = value.balance;
                 _showRechargeConfirmation();
               }));
+      TransactionService.createRechargeTransaction(Transaction(
+          walletId: _passenger.wallet!.walletId,
+          amount: rechargeAmount,
+          date: DateTime.now(),
+          status: "Success",
+          description: "Recarga de monedero"));
       debugPrint("Payment sheet displayed successfully");
     } catch (e) {
       throw Exception("Error displaying payment sheet: $e");

@@ -1,8 +1,8 @@
 import 'models.dart';
 
 class Transaction {
-  final int transactionId;
-  final int transactionTypeId;
+  final int? transactionId;
+  final int? transactionTypeId;
   final TransactionType? transactionType;
   final int walletId;
   final Wallet? wallet;
@@ -14,8 +14,8 @@ class Transaction {
   final Wallet? recipientWallet;
 
   Transaction({
-    required this.transactionId,
-    required this.transactionTypeId,
+    this.transactionId,
+    this.transactionTypeId,
     this.transactionType,
     required this.walletId,
     this.wallet,
@@ -45,5 +45,26 @@ class Transaction {
           ? Wallet.fromJson(json['recipientWallet'])
           : null,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'walletId': walletId,
+      'amount': amount,
+      'date': date.toIso8601String(),
+      'status': status,
+      'description': description
+    };
+  }
+
+  Map<String, dynamic> toJsonTransfer() {
+    return {
+      'walletId': walletId,
+      'amount': amount,
+      'date': date.toIso8601String(),
+      'status': status,
+      'description': description,
+      'recipientWalletId': recipientWalletId,
+    };
   }
 }

@@ -11,6 +11,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:route_master_mobile_app/models/models.dart';
 import 'package:route_master_mobile_app/screens/qr_scanner.dart';
 import 'package:route_master_mobile_app/services/rating_service.dart';
+import 'package:route_master_mobile_app/services/transaction_service.dart';
 import 'package:route_master_mobile_app/services/trip_service.dart';
 import 'package:uuid/uuid.dart';
 import '../constants.dart';
@@ -982,6 +983,12 @@ class _MapScreenState extends PlacesAutocompleteState {
     currentPassenger!.wallet!.balance = newPassengerBalance.toString();
     currentTrip = await TripService.updateTrip(tripToUpdate, token);
     await WalletService.putWallet(currentPassenger!.wallet!, token);
+    TransactionService.createPaymentTransaction(Transaction(
+        walletId: currentPassenger!.wallet!.walletId,
+        amount: tripToUpdate.totalPrice,
+        date: DateTime.now(),
+        status: 'Success',
+        description: 'Pago de boleto'));
     setState(() {});
   }
 
