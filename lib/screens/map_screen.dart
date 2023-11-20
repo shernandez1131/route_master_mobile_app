@@ -975,6 +975,9 @@ class _MapScreenState extends PlacesAutocompleteState {
     isPaidTrip = false;
     //keep trip going but pay ticket/ add cost to trip
     var tripToUpdate = currentTrip;
+    if (tripToUpdate.totalPrice == -1) {
+      tripToUpdate.totalPrice = 0;
+    }
     tripToUpdate.totalPrice = tripToUpdate.totalPrice + 1.5;
     String token = (await UserService.getToken())!;
     currentPassenger = await loadPassengerData();

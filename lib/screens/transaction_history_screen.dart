@@ -15,16 +15,17 @@ class TransactionHistoryScreen extends StatefulWidget {
 class _TransactionHistoryScreenState extends State<TransactionHistoryScreen>
     with SingleTickerProviderStateMixin {
   final List<String> tabs = ['Todos', 'Pagos', 'Recargas', 'Transferencias'];
+  late int? walletId;
 
   late TabController _tabController;
 
   Future<List<Transaction>> _getTransactions() async {
     // Get the transactions from the service
-    final walletId = await UserService.getWalletId();
+    walletId = await UserService.getWalletId();
     if (walletId == null) {
       throw Exception('WalletId is null');
     }
-    return TransactionService.getTransactionsByWalletId(walletId);
+    return TransactionService.getTransactionsByWalletId(walletId!);
   }
 
   @override
@@ -98,13 +99,16 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen>
                             subtitle: Text(DateFormat('dd/MM/yyyy HH:mm')
                                 .format(tabData[tabIndex][index].date)),
                             trailing: Text(
-                                '${tabData[tabIndex][index].transactionTypeId == 2 ? "+" : "-"}S/${tabData[tabIndex][index].amount.toStringAsFixed(2)}',
+                                '${tabData[tabIndex][index].transactionTypeId == 2 || tabData[tabIndex][index].recipientWalletId == walletId ? "+" : "-"}S/${tabData[tabIndex][index].amount.toStringAsFixed(2)}',
                                 style: TextStyle(
                                     fontSize: 14.0,
                                     fontWeight: FontWeight.bold,
                                     color: tabData[tabIndex][index]
-                                                .transactionTypeId ==
-                                            2
+                                                    .transactionTypeId ==
+                                                2 ||
+                                            tabData[tabIndex][index]
+                                                    .recipientWalletId ==
+                                                walletId
                                         ? Colors.green
                                         : Colors.red)),
                           ),
