@@ -136,42 +136,33 @@ class _TransferBalanceScreenState extends State<TransferBalanceScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
                 !isSearching
-                    ? FutureBuilder<Passenger?>(
-                        future: loadPassengerData(),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) {
-                            return CircularProgressIndicator();
-                          } else if (snapshot.hasError) {
-                            return Text("${snapshot.error}");
-                          }
-                          return ElevatedButton(
-                            child: const Text(
-                                "Buscar Dispositivos para Transferir"),
-                            onPressed: () async {
-                              try {
-                                isSearching = await Nearby().startAdvertising(
-                                    userName, strategy,
+                    ? ElevatedButton(
+                        child:
+                            const Text("Buscar Dispositivos para Transferir"),
+                        onPressed: () async {
+                          try {
+                            isSearching = await Nearby()
+                                .startAdvertising(userName, strategy,
                                     onConnectionInitiated: (id, info) {
-                                  onConnectionInit(id, info);
-                                }, onConnectionResult: (id, status) {
-                                  showSnackbar(context, status);
-                                }, onDisconnected: (id) {
-                                  showSnackbar(context,
-                                      "Disconnected: ${endpointMap[id]!.endpointName}, id $id");
-                                  setState(() {
-                                    endpointMap.remove(id);
-                                  });
-                                },
+                              onConnectionInit(id, info);
+                            }, onConnectionResult: (id, status) {
+                              showSnackbar(context, status);
+                            }, onDisconnected: (id) {
+                              showSnackbar(context,
+                                  "Disconnected: ${endpointMap[id]!.endpointName}, id $id");
+                              setState(() {
+                                endpointMap.remove(id);
+                              });
+                            },
                                     serviceId:
                                         'com.example.route_master_mobile_app');
-                                showSnackbar(context, "BUSCANDO DISPOSITIVOS");
-                                setState(() {});
-                              } catch (exception) {
-                                showSnackbar(context, exception.toString());
-                              }
-                            },
-                          );
-                        })
+                            showSnackbar(context, "BUSCANDO DISPOSITIVOS");
+                            setState(() {});
+                          } catch (exception) {
+                            showSnackbar(context, exception.toString());
+                          }
+                        },
+                      )
                     : ElevatedButton(
                         child: const Text("Detener Búsqueda"),
                         onPressed: () async {

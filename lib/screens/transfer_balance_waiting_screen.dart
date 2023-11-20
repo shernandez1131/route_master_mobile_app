@@ -134,112 +134,97 @@ class _TransferBalanceWaitingScreenState
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
                 !isSearching
-                    ? FutureBuilder<Passenger?>(
-                        future: loadPassengerData(),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) {
-                            return CircularProgressIndicator();
-                          } else if (snapshot.hasError) {
-                            return Text("${snapshot.error}");
-                          }
-                          return ElevatedButton(
-                            child: const Text(
-                                "Buscar dispositivos para recibir saldo"),
-                            onPressed: () async {
-                              try {
-                                isSearching = await Nearby().startDiscovery(
-                                    userName, strategy,
+                    ? ElevatedButton(
+                        child: const Text(
+                            "Buscar dispositivos para recibir saldo"),
+                        onPressed: () async {
+                          try {
+                            isSearching = await Nearby()
+                                .startDiscovery(userName, strategy,
                                     onEndpointFound: (id, name, serviceId) {
-                                  // show sheet automatically to request connection
-                                  showModalBottomSheet(
-                                    context: context,
-                                    builder: (builder) {
-                                      return Container(
-                                        padding: EdgeInsets.all(20),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: <Widget>[
-                                            Column(
-                                              children: [
-                                                Text(
-                                                  "Usuario encontrado:",
-                                                  style:
-                                                      TextStyle(fontSize: 20),
-                                                  textAlign: TextAlign.center,
-                                                ),
-                                                Text(
-                                                  "$name",
-                                                  style:
-                                                      TextStyle(fontSize: 15),
-                                                  textAlign: TextAlign.center,
-                                                )
-                                              ],
+                              // show sheet automatically to request connection
+                              showModalBottomSheet(
+                                context: context,
+                                builder: (builder) {
+                                  return Container(
+                                    padding: EdgeInsets.all(20),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: <Widget>[
+                                        Column(
+                                          children: [
+                                            Text(
+                                              "Usuario encontrado:",
+                                              style: TextStyle(fontSize: 20),
+                                              textAlign: TextAlign.center,
                                             ),
-                                            SizedBox(height: 20),
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
-                                              child: ElevatedButton(
-                                                style: ElevatedButton.styleFrom(
-                                                  padding: EdgeInsets.symmetric(
-                                                      horizontal: 40,
-                                                      vertical: 15),
-                                                ),
-                                                child: Text(
-                                                  "Establecer Conexión",
-                                                  style:
-                                                      TextStyle(fontSize: 20),
-                                                  textAlign: TextAlign.center,
-                                                ),
-                                                onPressed: () {
-                                                  Navigator.pop(context);
-                                                  Nearby().requestConnection(
-                                                    userName,
-                                                    id,
-                                                    onConnectionInitiated:
-                                                        (id, info) {
-                                                      onConnectionInit(
-                                                          id, info);
-                                                    },
-                                                    onConnectionResult:
-                                                        (id, status) {
-                                                      showSnackbar(context,
-                                                          status.toString());
-                                                    },
-                                                    onDisconnected: (id) {
-                                                      setState(() {
-                                                        endpointMap.remove(id);
-                                                      });
-                                                      showSnackbar(
-                                                        context,
-                                                        "Desconectado del usuario: ${endpointMap[id]!.endpointName}",
-                                                      );
-                                                    },
-                                                  );
-                                                },
-                                              ),
-                                            ),
+                                            Text(
+                                              "$name",
+                                              style: TextStyle(fontSize: 15),
+                                              textAlign: TextAlign.center,
+                                            )
                                           ],
                                         ),
-                                      );
-                                    },
+                                        SizedBox(height: 20),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              padding: EdgeInsets.symmetric(
+                                                  horizontal: 40, vertical: 15),
+                                            ),
+                                            child: Text(
+                                              "Establecer Conexión",
+                                              style: TextStyle(fontSize: 20),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                              Nearby().requestConnection(
+                                                userName,
+                                                id,
+                                                onConnectionInitiated:
+                                                    (id, info) {
+                                                  onConnectionInit(id, info);
+                                                },
+                                                onConnectionResult:
+                                                    (id, status) {
+                                                  showSnackbar(context,
+                                                      status.toString());
+                                                },
+                                                onDisconnected: (id) {
+                                                  setState(() {
+                                                    endpointMap.remove(id);
+                                                  });
+                                                  showSnackbar(
+                                                    context,
+                                                    "Desconectado del usuario: ${endpointMap[id]!.endpointName}",
+                                                  );
+                                                },
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   );
-                                }, onEndpointLost: (id) {
-                                  showSnackbar(context,
-                                      "Conexión perdida con el usuario: ${endpointMap[id]?.endpointName}, id $id");
                                 },
+                              );
+                            }, onEndpointLost: (id) {
+                              showSnackbar(context,
+                                  "Conexión perdida con el usuario: ${endpointMap[id]?.endpointName}, id $id");
+                            },
                                     serviceId:
                                         'com.example.route_master_mobile_app');
-                                isSearching = true;
-                                setState(() {});
-                                showSnackbar(context,
-                                    "BUSCANDO DISPOSITIVOS PARA RECIBIR SALDO");
-                              } catch (e) {
-                                showSnackbar(context, e.toString());
-                              }
-                            },
-                          );
-                        })
+                            isSearching = true;
+                            setState(() {});
+                            showSnackbar(context,
+                                "BUSCANDO DISPOSITIVOS PARA RECIBIR SALDO");
+                          } catch (e) {
+                            showSnackbar(context, e.toString());
+                          }
+                        },
+                      )
                     : ElevatedButton(
                         child: const Text("Detener Búsqueda"),
                         onPressed: () async {
